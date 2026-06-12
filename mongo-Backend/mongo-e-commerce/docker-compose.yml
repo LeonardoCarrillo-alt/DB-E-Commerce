@@ -3,7 +3,7 @@ version: '3.9'
 services:
   mongodb:
     image: mongo:8
-    container_name: mongodb
+    container_name: mongo-ecommerce-mongodb
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
@@ -12,14 +12,14 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - mongo-ecommerce-mongo-data:/data/db
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
-      - ecommerce-net
+      - mongo-ecommerce-net
 
   mongo-express:
     image: mongo-express:latest
-    container_name: mongo-express
+    container_name: mongo-ecommerce-mongo-express
     restart: always
     depends_on:
       - mongodb
@@ -32,13 +32,13 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - ecommerce-net
+      - mongo-ecommerce-net
 
   quarkus-app:
     build:
       context: .
       dockerfile: src/main/docker/Dockerfile.jvm
-    container_name: quarkus-mongo-service
+    container_name: mongo-ecommerce-quarkus-app
     ports:
       - "8080:8080"
     depends_on:
@@ -47,11 +47,11 @@ services:
       QUARKUS_MONGODB_CONNECTION_STRING: mongodb://admin:admin123@mongodb:27017/?authSource=admin
       QUARKUS_HTTP_PORT: 8080
     networks:
-      - ecommerce-net
+      - mongo-ecommerce-net
 
 networks:
-  ecommerce-net:
+  mongo-ecommerce-net:
     driver: bridge
 
 volumes:
-  mongo-data:
+  mongo-ecommerce-mongo-data:
