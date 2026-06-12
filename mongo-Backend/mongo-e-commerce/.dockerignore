@@ -1,0 +1,5 @@
+*
+!target/quarkus-app/*
+!init-mongo.js
+!mongodb.Dockerfile
+!src/main/docker/*
