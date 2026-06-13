@@ -1,0 +1,72 @@
+import {
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Paper, Chip, Select, MenuItem, Typography,
+} from '@mui/material'
+import { ORDER_STATUS, ORDER_STATUS_COLOR } from '../../utils/constants'
+import { formatCurrency } from '../../utils/formatCurrency'
+import { formatDateShort } from '../../utils/formatDate'
+import type { Order } from '../../api/orderApi'
+import type { OrderStatus } from '../../utils/constants'
+
+interface Props {
+  orders: Order[]
+  onStatusChange?: (id: number, estado: OrderStatus) => void
+}
+
+export default function OrderTable({ orders, onStatusChange }: Props) {
+  return (
+    <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
+      <Table size="small">
+        <TableHead sx={{ bgcolor: 'grey.50' }}>
+          <TableRow>
+            {['#', 'Fecha', 'Cliente ID', 'Total', 'Pago', 'Estado'].map((h) => (
+              <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', color: 'text.secondary' }}>
+                {h}
+              </TableCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {orders.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <Typography color="text.secondary">No hay pedidos</Typography>
+              </TableCell>
+            </TableRow>
+          ) : (
+            orders.map((order) => (
+              <TableRow key={order.id} hover>
+                <TableCell sx={{ fontWeight: 600 }}>#{order.id}</TableCell>
+                <TableCell>{formatDateShort(order.createdAt)}</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 11 }}>{order.clienteId}</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{formatCurrency(order.total)}</TableCell>
+                <TableCell>{order.metodoPago}</TableCell>
+                <TableCell>
+                  {onStatusChange ? (
+                    <Select
+                      value={order.estado}
+                      size="small"
+                      onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
+                      sx={{ minWidth: 130 }}
+                    >
+                      {Object.values(ORDER_STATUS).map((s) => (
+                        <MenuItem key={s} value={s}>{s}</MenuItem>
+                      ))}
+                    </Select>
+                  ) : (
+                    <Chip
+                      label={order.estado}
+                      color={ORDER_STATUS_COLOR[order.estado] ?? 'default'}
+                      size="small"
+                      sx={{ fontWeight: 600 }}
+                    />
+                  )}
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  )
+}
