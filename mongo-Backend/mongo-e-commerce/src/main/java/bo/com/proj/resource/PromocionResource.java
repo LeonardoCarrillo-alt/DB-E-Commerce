@@ -32,9 +32,8 @@ public class PromocionResource {
     @Path("/aplicar")
     @PermitAll
     @Operation(summary = "Aplicar un cupón de descuento al carrito actual")
-    public Response aplicarCupon(@Valid AplicarPromocionDTO dto, 
-                                  CalcularDescuentoDTO carrito) {
-        // En producción, el carrito se obtiene del servicio de carrito
+    public Response aplicarCupon(@Valid AplicarPromocionDTO dto) {
+        CalcularDescuentoDTO carrito = dto.carrito;
         ResultadoPromocionDTO resultado = promocionService.aplicarPromocionPorCodigo(dto, carrito);
         
         if (!resultado.errores.isEmpty()) {

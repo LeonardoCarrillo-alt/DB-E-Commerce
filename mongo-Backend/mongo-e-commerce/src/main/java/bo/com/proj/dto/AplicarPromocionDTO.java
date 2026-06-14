@@ -9,4 +9,5 @@ public class AplicarPromocionDTO {
     public String usuarioId;
     public Boolean esPrimeraCompra = false;
     public String rolUsuario;
+    public CalcularDescuentoDTO carrito;
 }

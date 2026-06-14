@@ -219,7 +219,7 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | Método | Endpoint | Acceso | Descripción |
 |--------|----------|--------|-------------|
 | `GET` | `/promociones/vigentes` | Público | Lista todas las promociones activas y dentro de su fecha de vigencia |
-| `POST` | `/promociones/aplicar` | Público | Valida y aplica un código de cupón calculando el descuento correspondiente |
+| `POST` | `/promociones/aplicar` | Público | Valida y aplica un código de cupón calculando el descuento. El body debe incluir el código, datos del usuario y el carrito (`codigoPromocion`, `usuarioId`, `rolUsuario`, `carrito`) |
 | `POST` | `/promociones` | ADMIN_TIENDA, SUPER_ADMIN | Crea una nueva promoción con sus reglas y condiciones |
 | `DELETE` | `/promociones/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Elimina una promoción existente |
 
