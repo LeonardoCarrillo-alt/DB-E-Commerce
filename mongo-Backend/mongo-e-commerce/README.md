@@ -159,6 +159,26 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `POST` | `/auth/logout` | Público | Invalida la sesión actual |
 | `GET` | `/auth/me` | Público | Retorna los datos del usuario autenticado desde el JWT |
 
+**POST** `/auth/login`
+```json
+{
+  "email": "admin@tienda.com",
+  "password": "password123"
+}
+```
+
+**POST** `/auth/refresh`
+```json
+{
+  "refreshToken": "<refresh_token>"
+}
+```
+
+**POST** `/auth/logout`
+```
+Authorization: Bearer <access_token>
+```
+
 ---
 
 ### Productos — `/productos`
@@ -171,6 +191,54 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `DELETE` | `/productos/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Elimina un producto validando que pertenezca a la tienda del admin |
 | `POST` | `/productos/buscar` | Público | Búsqueda simple con filtros dinámicos por categoría, tienda, precio y atributos |
 
+**POST** `/productos`
+```json
+{
+  "nombre": "Camisa Oxford Slim Fit",
+  "descripcion": "Camisa de algodón premium, corte slim",
+  "precio": 89.99,
+  "categoria": "ropa",
+  "tiendaId": "tienda-uuid-001",
+  "atributos": {
+    "talla": "M",
+    "color": "blanco",
+    "material": "algodón"
+  },
+  "activo": true
+}
+```
+
+**PUT** `/productos/{id}`
+```json
+{
+  "nombre": "Camisa Oxford Slim Fit - Edición Premium",
+  "descripcion": "Camisa de algodón premium actualizada",
+  "precio": 99.99,
+  "categoria": "ropa",
+  "tiendaId": "tienda-uuid-001",
+  "atributos": {
+    "talla": "M",
+    "color": "blanco",
+    "material": "algodón pima"
+  },
+  "activo": true
+}
+```
+
+**POST** `/productos/buscar`
+```json
+{
+  "categoria": "ropa",
+  "precioMin": 50.00,
+  "precioMax": 200.00,
+  "tiendaId": "tienda-uuid-001",
+  "atributos": {
+    "talla": "M",
+    "color": "blanco"
+  }
+}
+```
+
 ---
 
 ### Búsqueda — `/busqueda`
@@ -181,6 +249,23 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `GET` | `/busqueda/autocompletar?q=` | Público | Sugerencias de autocompletado en tiempo real (mínimo 2 caracteres) |
 | `GET` | `/busqueda/destacados` | Público | Productos destacados o más populares, filtrable por categoría |
 | `GET` | `/busqueda/relacionados/{productoId}` | Público | Productos relacionados al dado, por categoría y atributos similares |
+
+**POST** `/busqueda/productos`
+```json
+{
+  "query": "camisa",
+  "categoria": "ropa",
+  "precioMin": 30.00,
+  "precioMax": 150.00,
+  "atributos": {
+    "talla": "M"
+  },
+  "ordenarPor": "precio",
+  "ordenDireccion": "asc",
+  "pagina": 1,
+  "limite": 10
+}
+```
 
 ---
 
@@ -200,6 +285,43 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `POST` | `/carrito/checkout/procesar` | Autenticado / Invitado | Procesa el checkout y reserva el stock |
 | `POST` | `/carrito/migrar?sessionId=` | CLIENTE, ADMIN_TIENDA, SUPER_ADMIN | Migra el carrito de invitado al usuario registrado tras el login |
 
+**POST** `/carrito/items`
+```json
+{
+  "productoId": "<ObjectId del producto>",
+  "cantidad": 2,
+  "variante": "talla-M-color-blanco"
+}
+```
+
+**PUT** `/carrito/items`
+```json
+{
+  "productoId": "<ObjectId del producto>",
+  "cantidad": 3,
+  "variante": "talla-M-color-blanco"
+}
+```
+**POST** `/carrito/promocion`
+```json
+{
+  "codigoPromocion": "BIENVENIDO10"
+}
+
+**POST** `/carrito/checkout/procesar`
+> No requiere body. Toma el carrito activo del usuario desde los headers `X-Session-Id` y `X-Invitado`.
+```
+X-Session-Id: session-invitado-001
+X-Invitado: true
+```
+
+**POST** `/carrito/migrar?sessionId=`
+> No requiere body. El `sessionId` va como query param y el usuario se obtiene del JWT.
+```
+POST /carrito/migrar?sessionId=session-invitado-001
+Authorization: Bearer <access_token>
+```
+
 ---
 
 ### Inventario — `/inventario`
@@ -213,6 +335,46 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `GET` | `/inventario/alertas/{tiendaId}` | ADMIN_TIENDA, SUPER_ADMIN | Lista productos con stock bajo o crítico de una tienda |
 | `POST` | `/inventario/limpiar-expiradas` | SUPER_ADMIN | Libera manualmente reservas expiradas (también se ejecuta automáticamente) |
 
+**POST** `/inventario/reservar`
+```json
+{
+  "carritoId": "<ObjectId del carrito>",
+  "usuarioId": "usuario-uuid-001",
+  "items": [
+    {
+      "productoId": "<ObjectId del producto>",
+      "variante": "talla-M-color-blanco",
+      "cantidad": 2
+    }
+  ]
+}
+```
+
+**POST** `/inventario/confirmar`
+```json
+{
+  "reservaId": "<UUID de la reserva>",
+  "orderId": "orden-uuid-001"
+}
+```
+
+**POST** `/inventario/reabastecer`
+```json
+{
+  "productoId": "<ObjectId del producto>",
+  "variante": null,
+  "cantidad": 50,
+  "motivo": "Reabastecimiento mensual"
+}
+```
+
+**POST** `/inventario/limpiar-expiradas`
+> No requiere body. El tiempo de expiración va como query param (default: 15 minutos).
+```
+POST /inventario/limpiar-expiradas?minutos=15
+Authorization: Bearer <access_token>
+```
+
 ---
 
 ### Promociones — `/promociones`
@@ -222,6 +384,51 @@ El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar producto
 | `POST` | `/promociones/aplicar` | Público | Valida y aplica un código de cupón calculando el descuento. El body debe incluir el código, datos del usuario y el carrito (`codigoPromocion`, `usuarioId`, `rolUsuario`, `carrito`) |
 | `POST` | `/promociones` | ADMIN_TIENDA, SUPER_ADMIN | Crea una nueva promoción con sus reglas y condiciones |
 | `DELETE` | `/promociones/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Elimina una promoción existente |
+
+**POST** `/promociones/aplicar`
+```json
+{
+  "codigoPromocion": "BIENVENIDO10",
+  "usuarioId": "usuario-uuid-001",
+  "rolUsuario": "CLIENTE",
+  "esPrimeraCompra": false,
+  "carrito": {
+    "usuarioId": "usuario-uuid-001",
+    "subtotal": 200.00,
+    "cantidadItems": 2,
+    "items": [
+      {
+        "productoId": "<ObjectId del producto>",
+        "categoria": "ropa",
+        "tiendaId": "tienda-uuid-001",
+        "cantidad": 2,
+        "precioUnitario": 89.99,
+        "subtotal": 179.98
+      }
+    ]
+  }
+}
+```
+
+**POST** `/promociones`
+```json
+{
+  "nombre": "Descuento Verano",
+  "codigo": "VERANO20",
+  "tipo": "PORCENTAJE",
+  "valor": 20,
+  "montoMinimoCompra": 100.00,
+  "maximoDescuento": 50.00,
+  "categoriasAplican": ["ropa", "accesorios"],
+  "fechaInicio": "2025-12-01T00:00:00",
+  "fechaFin": "2026-02-28T23:59:59",
+  "usosMaximos": 500,
+  "usosPorUsuario": 1,
+  "activo": true,
+  "apilable": false,
+  "prioridad": 1
+}
+```
 
 ---
 
