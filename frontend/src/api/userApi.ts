@@ -11,19 +11,21 @@ export interface User {
   createdAt: string
 }
 
+// CAMBIO: Todas las rutas mutan de '/users' a '/usuarios'
 export const userApi = {
   getAll: () =>
-    axiosInstance.get<User[]>('/users'),
+    axiosInstance.get<User[]>('/usuarios'),
 
   getById: (id: number) =>
-    axiosInstance.get<User>(`/users/${id}`),
+    axiosInstance.get<User>(`/usuarios/${id}`),
 
   updateProfile: (id: number, data: Partial<User>) =>
-    axiosInstance.put<User>(`/users/${id}`, data),
+    axiosInstance.put<User>(`/usuarios/${id}`, data),
 
   changePassword: (id: number, data: { currentPassword: string; newPassword: string }) =>
-    axiosInstance.patch(`/users/${id}/password`, data),
+    axiosInstance.patch(`/usuarios/${id}/password`, data),
 
+  // CAMBIO: '/users/:id/deactivate' ➔ '/usuarios/:id/desactivar'
   deactivate: (id: number) =>
-    axiosInstance.patch(`/users/${id}/deactivate`),
+    axiosInstance.patch(`/usuarios/${id}/desactivar`),
 }

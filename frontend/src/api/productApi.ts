@@ -22,9 +22,7 @@ export interface Product {
   marca?: string
   imagenes: string[]
   etiquetas: string[]
-  variantes?: Record<string, unknown>[]
   activo: boolean
-  // Atributos dinámicos por categoría
   [key: string]: unknown
 }
 
@@ -36,24 +34,29 @@ export interface ProductsResponse {
 }
 
 export const productApi = {
+  // CAMBIO: '/products' ➔ '/productos'
   getAll: (filters: ProductFilters = {}) =>
-    axiosInstance.get<ProductsResponse>(`/products${toQueryString(filters as Record<string, unknown>)}`),
+    axiosInstance.get<ProductsResponse>(`/productos${toQueryString(filters as Record<string, unknown>)}`),
 
+  // CAMBIO: '/products/:id' ➔ '/productos/:id'
   getById: (id: string) =>
-    axiosInstance.get<Product>(`/products/${id}`),
+    axiosInstance.get<Product>(`/productos/${id}`),
 
+  // CAMBIO: '/products/search' ➔ '/busqueda' (Resource independiente de búsqueda)
   search: (query: string, filters: Omit<ProductFilters, 'busqueda'> = {}) =>
-    axiosInstance.get<ProductsResponse>(`/products/search${toQueryString({ q: query, ...filters } as Record<string, unknown>)}`),
+    axiosInstance.get<ProductsResponse>(`/busqueda${toQueryString({ q: query, ...filters } as Record<string, unknown>)}`),
 
+  // CAMBIO: CRUD a '/productos'
   create: (data: Partial<Product>) =>
-    axiosInstance.post<Product>('/products', data),
+    axiosInstance.post<Product>('/productos', data),
 
   update: (id: string, data: Partial<Product>) =>
-    axiosInstance.put<Product>(`/products/${id}`, data),
+    axiosInstance.put<Product>(`/productos/${id}`, data),
 
   delete: (id: string) =>
-    axiosInstance.delete(`/products/${id}`),
+    axiosInstance.delete(`/productos/${id}`),
 
+  // CAMBIO: '/products?categoria=...' ➔ '/productos/categoria/:categoria'
   getByCategory: (categoria: string, filters: ProductFilters = {}) =>
-    axiosInstance.get<ProductsResponse>(`/products${toQueryString({ categoria, ...filters } as Record<string, unknown>)}`),
+    axiosInstance.get<ProductsResponse>(`/productos/categoria/${categoria}${toQueryString(filters as Record<string, unknown>)}`),
 }
