@@ -307,8 +307,10 @@ Authorization: Bearer <access_token>
 {
   "codigoPromocion": "BIENVENIDO10"
 }
+```
 
 **POST** `/carrito/checkout/procesar`
+
 > No requiere body. Toma el carrito activo del usuario desde los headers `X-Session-Id` y `X-Invitado`.
 ```
 X-Session-Id: session-invitado-001
