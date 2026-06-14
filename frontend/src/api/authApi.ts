@@ -28,8 +28,9 @@ export const authApi = {
   login: (data: LoginPayload) =>
     axiosInstance.post<AuthResponse>('/auth/login', data),
 
+  // El backend registra y suele retornar el usuario creado (201)
   register: (data: RegisterPayload) =>
-    axiosInstance.post<AuthResponse>('/auth/register', data),
+    axiosInstance.post<unknown>('/auth/register', data), 
 
   logout: () =>
     axiosInstance.post('/auth/logout'),
@@ -37,6 +38,7 @@ export const authApi = {
   refreshToken: (refreshToken: string) =>
     axiosInstance.post<{ token: string }>('/auth/refresh', { refreshToken }),
 
+  // CAMBIO: '/auth/me' ➔ '/auth/perfil'
   getProfile: () =>
-    axiosInstance.get('/auth/me'),
+    axiosInstance.get('/auth/perfil'), 
 }

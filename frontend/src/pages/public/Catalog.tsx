@@ -28,7 +28,8 @@ export default function Catalog() {
   })
 
   const { data, isLoading, isFetching } = useProducts(filters)
-
+  console.log(data)
+  console.log("DATA =", data);
   const handleFilterChange = (newFilters: Partial<Filters>) => {
     setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }))
   }
@@ -46,8 +47,10 @@ export default function Catalog() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / DEFAULT_PAGE_SIZE)) : 1
-
+  // const totalPages = data ? Math.max(1, Math.ceil(data.total / DEFAULT_PAGE_SIZE)) : 1
+  const totalPages = Math.max(
+  1,
+  Math.ceil((Number(data?.total) || 0) / DEFAULT_PAGE_SIZE))
   const filtersPanel = (
     <ProductFilters filters={filters} onChange={handleFilterChange} onReset={handleReset} />
   )

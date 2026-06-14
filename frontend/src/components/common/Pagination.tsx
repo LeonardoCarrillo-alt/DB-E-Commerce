@@ -7,6 +7,7 @@ interface Props {
 }
 
 export default function Pagination({ page, count, onChange }: Props) {
+  console.log("count=", count);
   if (count <= 1) return null
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
