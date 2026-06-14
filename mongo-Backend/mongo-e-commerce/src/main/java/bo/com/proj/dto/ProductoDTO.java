@@ -12,4 +12,6 @@ public class ProductoDTO {
     public String tiendaId;
     public Map<String, Object> atributos;
     public Boolean activo;
+    public Integer stockDisponible;
+    public Boolean disponible;
 }

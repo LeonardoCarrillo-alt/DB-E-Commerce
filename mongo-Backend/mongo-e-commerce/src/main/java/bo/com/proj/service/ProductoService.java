@@ -42,6 +42,21 @@ public class ProductoService {
         return productoRepository.deleteById(new ObjectId(id));
     }
 
+    @Transactional
+    public ProductoDTO update(String id, ProductoDTO dto) {
+        Producto p = productoRepository.findById(new ObjectId(id));
+        if (p == null) return null;
+        p.nombre = dto.nombre;
+        p.descripcion = dto.descripcion;
+        p.precio = dto.precio;
+        p.categoria = dto.categoria;
+        p.tiendaId = dto.tiendaId;
+        p.atributos = dto.atributos;
+        if (dto.activo != null) p.activo = dto.activo;
+        productoRepository.update(p);
+        return toDTO(p);
+    }
+
     public List<ProductoDTO> searchDynamic(FiltroBusquedaDTO filtro) {
         Document query = new Document();
         if (filtro.categoria != null) query.append("categoria", filtro.categoria);
