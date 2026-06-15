@@ -9,6 +9,12 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import java.net.URI;
 import java.util.List;
@@ -17,12 +23,15 @@ import java.util.UUID;
 @Path("/facturas")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Facturas", description = "Gestión de facturas")
 public class FacturaResource {
 
     @Inject
     FacturaService facturaService;
 
     @GET
+    @Operation(summary = "Listar facturas", description = "Obtiene todas las facturas registradas.")
+    @APIResponse(responseCode = "200", description = "Listado de facturas", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FacturaResponse.class)))
     public Response listAll() {
         List<FacturaResponse> response = facturaService.listAll().stream().map(DtoMapper::toResponse).toList();
         return Response.ok(response).build();
@@ -30,30 +39,45 @@ public class FacturaResource {
 
     @GET
     @Path("{id}")
+    @Operation(summary = "Obtener factura", description = "Recupera una factura por su identificador.")
+    @APIResponse(responseCode = "200", description = "Factura encontrada", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FacturaResponse.class)))
+    @APIResponse(responseCode = "404", description = "Factura no encontrada")
     public Response findById(@PathParam("id") UUID id) {
         return Response.ok(DtoMapper.toResponse(facturaService.findById(id))).build();
     }
 
     @GET
     @Path("pedido/{pedidoId}")
+    @Operation(summary = "Listar facturas por pedido", description = "Obtiene las facturas asociadas a un pedido.")
+    @APIResponse(responseCode = "200", description = "Listado de facturas del pedido", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FacturaResponse.class)))
     public Response findByPedidoId(@PathParam("pedidoId") UUID pedidoId) {
         return Response.ok(facturaService.findByPedidoId(pedidoId).stream().map(DtoMapper::toResponse).toList()).build();
     }
 
     @POST
-    public Response create(@Valid FacturaRequest request) {
+    @Operation(summary = "Crear factura", description = "Crea una nueva factura.")
+    @APIResponse(responseCode = "201", description = "Factura creada", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FacturaResponse.class)))
+    @APIResponse(responseCode = "400", description = "Datos inválidos")
+    public Response create(@Valid @RequestBody(description = "Datos de la factura a crear", required = true, content = @Content(schema = @Schema(implementation = FacturaRequest.class))) FacturaRequest request) {
         var factura = facturaService.create(DtoMapper.toEntity(request));
         return Response.created(URI.create("/facturas/" + factura.getId())).entity(DtoMapper.toResponse(factura)).build();
     }
 
     @PUT
     @Path("{id}")
-    public Response update(@PathParam("id") UUID id, @Valid FacturaRequest request) {
+    @Operation(summary = "Actualizar factura", description = "Actualiza una factura existente.")
+    @APIResponse(responseCode = "200", description = "Factura actualizada", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = FacturaResponse.class)))
+    @APIResponse(responseCode = "400", description = "Datos inválidos")
+    @APIResponse(responseCode = "404", description = "Factura no encontrada")
+    public Response update(@PathParam("id") UUID id, @Valid @RequestBody(description = "Datos actualizados de la factura", required = true, content = @Content(schema = @Schema(implementation = FacturaRequest.class))) FacturaRequest request) {
         return Response.ok(DtoMapper.toResponse(facturaService.update(id, DtoMapper.toEntity(request)))).build();
     }
 
     @DELETE
     @Path("{id}")
+    @Operation(summary = "Eliminar factura", description = "Elimina una factura por su identificador.")
+    @APIResponse(responseCode = "204", description = "Factura eliminada")
+    @APIResponse(responseCode = "404", description = "Factura no encontrada")
     public Response delete(@PathParam("id") UUID id) {
         facturaService.delete(id);
         return Response.noContent().build();
