@@ -37,7 +37,10 @@ public class UsuarioService {
     }
 
     public Usuario findById(UUID id) {
-        return entityManager.createQuery("select u from Usuario u where u.id = :id", Usuario.class)
+        return entityManager.createQuery(
+                        "select u from Usuario u " +
+                                "left join fetch u.tienda t " +
+                                "where u.id = :id", Usuario.class)
                 .setParameter("id", id)
                 .getResultStream()
                 .findFirst()
@@ -54,6 +57,7 @@ public class UsuarioService {
                         "select u from Usuario u " +
                                 "left join fetch u.usuarioRoles ur " +
                                 "left join fetch ur.rol r " +
+                                "left join fetch u.tienda t " +
                                 "where u.email = :email", Usuario.class)
                 .setParameter("email", email)
                 .getResultStream()
