@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 public class FacturaRequest {
@@ -13,25 +12,22 @@ public class FacturaRequest {
     private UUID pedidoId;
 
     @NotBlank
-    @Size(max = 100)
-    private String numeroFactura;
+    @Size(max = 20)
+    private String rfc;
 
-    @NotNull
-    private BigDecimal total;
+    private String xmlUrl;
 
-    @NotBlank
-    @Size(max = 30)
-    private String estado;
+    private String pdfUrl;
 
     public UUID getPedidoId() { return pedidoId; }
     public void setPedidoId(UUID pedidoId) { this.pedidoId = pedidoId; }
 
-    public String getNumeroFactura() { return numeroFactura; }
-    public void setNumeroFactura(String numeroFactura) { this.numeroFactura = numeroFactura; }
+    public String getRfc() { return rfc; }
+    public void setRfc(String rfc) { this.rfc = rfc; }
 
-    public BigDecimal getTotal() { return total; }
-    public void setTotal(BigDecimal total) { this.total = total; }
+    public String getXmlUrl() { return xmlUrl; }
+    public void setXmlUrl(String xmlUrl) { this.xmlUrl = xmlUrl; }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) { this.estado = estado; }
+    public String getPdfUrl() { return pdfUrl; }
+    public void setPdfUrl(String pdfUrl) { this.pdfUrl = pdfUrl; }
 }

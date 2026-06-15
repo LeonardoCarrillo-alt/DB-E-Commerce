@@ -13,18 +13,25 @@ public class EnvioRequest {
 
     @NotBlank
     @Size(max = 100)
-    private String transportista;
+    private String trackingNumber;
 
     @NotBlank
-    @Size(max = 30)
+    @Size(max = 50)
     private String estado;
+
+    @NotBlank
+    @Size(max = 100)
+    private String proveedor;
 
     public UUID getPedidoId() { return pedidoId; }
     public void setPedidoId(UUID pedidoId) { this.pedidoId = pedidoId; }
 
-    public String getTransportista() { return transportista; }
-    public void setTransportista(String transportista) { this.transportista = transportista; }
+    public String getTrackingNumber() { return trackingNumber; }
+    public void setTrackingNumber(String trackingNumber) { this.trackingNumber = trackingNumber; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getProveedor() { return proveedor; }
+    public void setProveedor(String proveedor) { this.proveedor = proveedor; }
 }
