@@ -4,11 +4,13 @@ import com.ecommerce.postgres.dto.request.UsuarioRequest;
 import com.ecommerce.postgres.dto.response.UsuarioResponse;
 import com.ecommerce.postgres.mapper.DtoMapper;
 import com.ecommerce.postgres.service.UsuarioService;
+import io.quarkus.security.Authenticated;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -28,6 +30,9 @@ public class UsuarioResource {
 
     @Inject
     UsuarioService usuarioService;
+
+    @Inject
+    JsonWebToken jwt;
 
     @GET
     @Path("validar")
@@ -49,13 +54,14 @@ public class UsuarioResource {
 
     @GET
     @Path("me")
-    @Operation(summary = "Obtener usuario actual", description = "Recupera el usuario a partir del token JWT.")
+    @Authenticated
+    @Operation(summary = "Obtener usuario actual", description = "Recupera el usuario a partir del token JWT emitido por mongo-e-commerce.")
     @APIResponse(responseCode = "200", description = "Usuario encontrado", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = UsuarioResponse.class)))
-    @APIResponse(responseCode = "401", description = "No autorizado")
-    public Response getCurrentUser(@HeaderParam("Authorization") String authorization) {
-        // TODO: Implementar extracción de ID del token JWT
-        // Por ahora, retornamos un placeholder o podemos usar un usuario de prueba
-        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
+    @APIResponse(responseCode = "401", description = "Token ausente o inválido")
+    @APIResponse(responseCode = "404", description = "Usuario no encontrado")
+    public Response getCurrentUser() {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        return Response.ok(DtoMapper.toResponse(usuarioService.findById(userId))).build();
     }
 
     @GET
