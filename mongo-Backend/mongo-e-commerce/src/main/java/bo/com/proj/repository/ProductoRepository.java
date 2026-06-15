@@ -4,7 +4,6 @@ import bo.com.proj.dto.BusquedaProductoDTO;
 import bo.com.proj.dto.ResultadoBusquedaDTO;
 import bo.com.proj.entity.Producto;
 import io.quarkus.mongodb.panache.PanacheMongoRepository;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.bson.Document;
 import org.bson.conversions.Bson;

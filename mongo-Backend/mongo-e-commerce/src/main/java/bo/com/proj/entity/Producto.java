@@ -2,7 +2,6 @@ package bo.com.proj.entity;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
-import org.bson.Document;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
