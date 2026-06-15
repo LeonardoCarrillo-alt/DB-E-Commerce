@@ -66,9 +66,7 @@ export const register = createAsyncThunk(
   'auth/register',
   async (payload: RegisterPayload, { rejectWithValue }) => {
     try {
-      // El registro puede usar el mismo endpoint de login si el backend lo provee
-      // o un endpoint específico. Ajustar según el backend real.
-      const { data } = await authApi.login({ email: payload.email, password: payload.password })
+      const { data } = await authApi.register(payload)
       localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
       localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user))

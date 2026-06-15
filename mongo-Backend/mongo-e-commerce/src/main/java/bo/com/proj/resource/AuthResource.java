@@ -2,6 +2,7 @@ package bo.com.proj.resource;
 
 import bo.com.proj.dto.LoginRequestDTO;
 import bo.com.proj.dto.LoginResponseDTO;
+import bo.com.proj.dto.RegisterRequestDTO;
 import bo.com.proj.dto.RefreshTokenRequestDTO;
 import bo.com.proj.service.AuthService;
 import jakarta.annotation.security.PermitAll;
@@ -33,6 +34,14 @@ public class AuthResource {
     public Response login(@Valid LoginRequestDTO request) {
         LoginResponseDTO response = authService.login(request);
         return Response.ok(response).build();
+    }
+
+    @POST
+    @Path("/register")
+    @Operation(summary = "Registrar cliente - Crea usuario en PostgreSQL y retorna JWT")
+    public Response register(@Valid RegisterRequestDTO request) {
+        LoginResponseDTO response = authService.register(request);
+        return Response.status(Response.Status.CREATED).entity(response).build();
     }
     
     @POST

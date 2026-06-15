@@ -38,10 +38,10 @@ public class CarritoResource {
     @GET
     @Operation(summary = "Obtener el carrito actual del usuario")
     public Response getCarrito() {
-        String usuarioId = getCurrentUserId();
         Boolean invitado = esInvitado != null && esInvitado;
-        
-        CarritoDTO carrito = carritoService.getCarritoByUsuario(usuarioId, invitado);
+        String idUsuario = invitado && sessionId != null ? sessionId : getCurrentUserId();
+
+        CarritoDTO carrito = carritoService.getCarritoByUsuario(idUsuario, invitado);
         return Response.ok(carrito).build();
     }
     

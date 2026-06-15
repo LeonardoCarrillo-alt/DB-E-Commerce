@@ -3,3 +3,7 @@ target/
 .vscode/
 *.iml
 .DS_Store
+
+# JWT keys (copiar desde mongo-e-commerce o generar localmente)
+src/main/resources/publicKey.pem
+src/main/resources/privateKey.pem

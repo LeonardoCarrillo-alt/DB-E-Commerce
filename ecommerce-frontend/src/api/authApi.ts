@@ -31,6 +31,10 @@ export const authApi = {
   login: (data: LoginPayload) =>
     axiosInstance.post<AuthResponse>('/auth/login', data),
 
+  /** POST /auth/register */
+  register: (data: RegisterPayload) =>
+    axiosInstance.post<AuthResponse>('/auth/register', data),
+
   /** POST /auth/refresh */
   refreshToken: (refreshToken: string) =>
     axiosInstance.post<{ token: string }>('/auth/refresh', { refreshToken }),

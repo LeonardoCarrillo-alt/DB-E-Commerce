@@ -2,8 +2,11 @@ package com.ecommerce.postgres.service;
 
 import com.ecommerce.postgres.entity.Tienda;
 import com.ecommerce.postgres.entity.Usuario;
+import com.ecommerce.postgres.entity.UsuarioRol;
+import com.ecommerce.postgres.entity.UsuarioRolId;
 import com.ecommerce.postgres.exception.BusinessException;
 import com.ecommerce.postgres.exception.ResourceNotFoundException;
+import com.ecommerce.postgres.repository.RolRepository;
 import com.ecommerce.postgres.repository.TiendaRepository;
 import com.ecommerce.postgres.repository.UsuarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,6 +25,9 @@ public class UsuarioService {
 
     @Inject
     TiendaRepository tiendaRepository;
+
+    @Inject
+    RolRepository rolRepository;
 
     @Inject
     EntityManager entityManager;
@@ -43,6 +49,25 @@ public class UsuarioService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + email));
     }
 
+    public Usuario validarCredenciales(String email, String password) {
+        Usuario usuario = entityManager.createQuery(
+                        "select u from Usuario u " +
+                                "left join fetch u.usuarioRoles ur " +
+                                "left join fetch ur.rol r " +
+                                "where u.email = :email", Usuario.class)
+                .setParameter("email", email)
+                .getResultStream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Credenciales inválidas"));
+        if (!Boolean.TRUE.equals(usuario.getActivo())) {
+            throw new BusinessException("Usuario inactivo");
+        }
+        if (!org.mindrot.jbcrypt.BCrypt.checkpw(password, usuario.getPasswordHash())) {
+            throw new BusinessException("Credenciales inválidas");
+        }
+        return usuario;
+    }
+
     @Transactional
     public Usuario create(Usuario usuario) {
         if (usuarioRepository.findByEmail(usuario.getEmail()).isPresent()) {
@@ -56,8 +81,32 @@ public class UsuarioService {
                     .orElseThrow(() -> new ResourceNotFoundException("Tienda no encontrada: " + usuario.getTienda().getId()));
             usuario.setTienda(tienda);
         }
+        // Hashear la contraseña antes de guardar
+        if (usuario.getPasswordHash() != null) {
+            usuario.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(usuario.getPasswordHash(), org.mindrot.jbcrypt.BCrypt.gensalt(12)));
+        }
         usuarioRepository.persist(usuario);
+        entityManager.flush();
+        assignDefaultClienteRole(usuario);
         return usuario;
+    }
+
+    private void assignDefaultClienteRole(Usuario usuario) {
+        if (usuario.getUsuarioRoles() != null && !usuario.getUsuarioRoles().isEmpty()) {
+            return;
+        }
+
+        var clienteRol = rolRepository.findByNombre("CLIENTE")
+                .orElseThrow(() -> new ResourceNotFoundException("Rol CLIENTE no encontrado"));
+
+        UsuarioRol usuarioRol = new UsuarioRol();
+        usuarioRol.setUsuario(usuario);
+        usuarioRol.setRol(clienteRol);
+        usuarioRol.setActivo(true);
+        usuarioRol.setId(new UsuarioRolId(usuario.getId(), clienteRol.getId()));
+
+        entityManager.persist(usuarioRol);
+        usuario.getUsuarioRoles().add(usuarioRol);
     }
 
     @Transactional

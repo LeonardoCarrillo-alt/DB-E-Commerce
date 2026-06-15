@@ -6,7 +6,6 @@ import bo.com.proj.entity.Producto;
 import bo.com.proj.repository.ProductoRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -30,19 +29,16 @@ public class ProductoService {
         return p != null ? toDTO(p) : null;
     }
 
-    @Transactional
     public ProductoDTO create(ProductoDTO dto) {
         Producto p = toEntity(dto);
         productoRepository.persist(p);
         return toDTO(p);
     }
 
-    @Transactional
     public boolean delete(String id) {
         return productoRepository.deleteById(new ObjectId(id));
     }
 
-    @Transactional
     public ProductoDTO update(String id, ProductoDTO dto) {
         Producto p = productoRepository.findById(new ObjectId(id));
         if (p == null) return null;

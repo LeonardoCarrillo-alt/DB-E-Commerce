@@ -1,6 +1,7 @@
 package com.ecommerce.postgres.dto.response;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class UsuarioResponse {
@@ -10,6 +11,8 @@ public class UsuarioResponse {
     private Boolean activo;
     private Instant fechaCreacion;
     private UUID tiendaId;
+    private String rol;
+    private List<String> permisos;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -28,4 +31,10 @@ public class UsuarioResponse {
 
     public UUID getTiendaId() { return tiendaId; }
     public void setTiendaId(UUID tiendaId) { this.tiendaId = tiendaId; }
+
+    public String getRol() { return rol; }
+    public void setRol(String rol) { this.rol = rol; }
+
+    public List<String> getPermisos() { return permisos; }
+    public void setPermisos(List<String> permisos) { this.permisos = permisos; }
 }

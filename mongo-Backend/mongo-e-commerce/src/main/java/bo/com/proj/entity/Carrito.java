@@ -2,6 +2,7 @@ package bo.com.proj.entity;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
+import org.bson.codecs.pojo.annotations.BsonProperty;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,28 +12,39 @@ import java.util.List;
 @MongoEntity(collection = "carritos")
 public class Carrito extends PanacheMongoEntity {
     
-    public String usuarioId;           
-    public String usuarioEmail;      
+    @BsonProperty("usuario_id")
+    public String usuarioId;
+    @BsonProperty("usuario_email")
+    public String usuarioEmail;
     public List<ItemCarrito> items = new ArrayList<>();
     public BigDecimal subtotal = BigDecimal.ZERO;
     public BigDecimal descuento = BigDecimal.ZERO;
     public BigDecimal total = BigDecimal.ZERO;
-    public String codigoPromocion;     
+    @BsonProperty("codigo_promocion")
+    public String codigoPromocion;
+    @BsonProperty("fecha_creacion")
     public LocalDateTime fechaCreacion = LocalDateTime.now();
+    @BsonProperty("fecha_actualizacion")
     public LocalDateTime fechaActualizacion = LocalDateTime.now();
-    public String estado = "ACTIVO";    
-    public Boolean invitado = false;    
+    public String estado = "ACTIVO";
+    public Boolean invitado = false;
     
     public static class ItemCarrito {
-        public String productoId;       
-        public String nombreProducto;   
+        @BsonProperty("producto_id")
+        public String productoId;
+        @BsonProperty("nombre_producto")
+        public String nombreProducto;
         public String categoria;
-        public String tiendaId;         
+        @BsonProperty("tienda_id")
+        public String tiendaId;
         public Integer cantidad;
+        @BsonProperty("precio_unitario")
         public BigDecimal precioUnitario;
-        public BigDecimal subtotal;     
-        public String imagenUrl;        
-        public String variante;         
+        public BigDecimal subtotal;
+        @BsonProperty("imagen_url")
+        public String imagenUrl;
+        public String variante;
+        @BsonProperty("fecha_agregado")
         public LocalDateTime fechaAgregado = LocalDateTime.now();
     }
     

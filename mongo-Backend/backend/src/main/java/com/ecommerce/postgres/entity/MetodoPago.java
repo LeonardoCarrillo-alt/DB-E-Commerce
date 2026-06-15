@@ -23,7 +23,7 @@ public class MetodoPago extends PanacheEntityBase {
     private Usuario usuario;
 
     @NotBlank
-    @Column(name = "token_tarjeta", nullable = false)
+    @Column(name = "token_tarjeta", nullable = false, columnDefinition = "TEXT")
     private String tokenTarjeta;
 
     @NotBlank

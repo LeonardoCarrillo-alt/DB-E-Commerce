@@ -1,0 +1,2 @@
+# JWT keys — generar por entorno, no versionar
+**/*.pem

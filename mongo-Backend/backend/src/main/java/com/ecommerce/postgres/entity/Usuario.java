@@ -29,7 +29,7 @@ public class Usuario extends PanacheEntityBase {
     private String email;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @NotBlank

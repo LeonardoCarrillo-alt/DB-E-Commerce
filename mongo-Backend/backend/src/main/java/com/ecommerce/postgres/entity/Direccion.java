@@ -22,7 +22,7 @@ public class Direccion extends PanacheEntityBase {
     private Usuario usuario;
 
     @NotBlank
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String calle;
 
     @NotBlank

@@ -18,7 +18,6 @@ public class Rol extends PanacheEntityBase {
     @Column(nullable = false, length = 50)
     private String nombre;
 
-    @Lob
     @Column(columnDefinition = "jsonb")
     private String permisos;
 

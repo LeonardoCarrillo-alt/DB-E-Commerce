@@ -18,7 +18,6 @@ import bo.com.proj.repository.PromocionRepository;
 import org.bson.types.ObjectId;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -89,7 +88,6 @@ public class CarritoService {
     }
     
     // Crear nuevo carrito
-    @Transactional
     public Carrito crearNuevoCarrito(String usuarioId, String usuarioEmail, Boolean esInvitado) {
         Carrito carrito = new Carrito();
         carrito.usuarioId = usuarioId;
@@ -102,7 +100,6 @@ public class CarritoService {
         return carrito;
     }
     
-    @Transactional
     public CarritoDTO agregarItem(AgregarItemDTO dto, Boolean esInvitado) {
 
         if (dto.usuarioId == null || dto.usuarioId.trim().isEmpty()) {
@@ -148,7 +145,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO actualizarItem(ActualizarItemDTO dto, String usuarioId, Boolean esInvitado) {
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
         
@@ -166,7 +162,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO eliminarItem(String productoId, String variante, String usuarioId, Boolean esInvitado) {
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
         carrito.eliminarItem(productoId, variante);
@@ -174,7 +169,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO limpiarCarrito(String usuarioId, Boolean esInvitado) {
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
         carrito.limpiarCarrito();
@@ -182,7 +176,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO aplicarPromocion(AplicarPromocionDTO dto, String usuarioId, Boolean esInvitado) {
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
         
@@ -204,7 +197,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO quitarPromocion(String usuarioId, Boolean esInvitado) {
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
         carrito.descuento = BigDecimal.ZERO;
@@ -234,7 +226,6 @@ public class CarritoService {
         return toDTO(carrito);
     }
     
-    @Transactional
     public CarritoDTO migrarCarritoInvitado(String sessionId, String usuarioId, String usuarioEmail) {
         Optional<Carrito> carritoInvitadoOpt = carritoRepository.findInvitadoBySessionId(sessionId);
         Optional<Carrito> carritoUsuarioOpt = carritoRepository.findByUsuarioId(usuarioId);
@@ -267,7 +258,6 @@ public class CarritoService {
         return toDTO(carritoDestino);
     }
     // Procesar checkout completo (unificar reserva + preparar pago)
-    @Transactional
     public CheckoutResponseDTO procesarCheckout(String usuarioId, Boolean esInvitado) {
         // Obtener carrito
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);

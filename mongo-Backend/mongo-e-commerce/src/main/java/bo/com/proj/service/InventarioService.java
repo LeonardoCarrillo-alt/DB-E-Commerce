@@ -9,7 +9,6 @@ import bo.com.proj.exception.ValidationException;
 import bo.com.proj.repository.InventarioRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
@@ -65,7 +64,6 @@ public class InventarioService {
     }
     
     // Reservar stock para un carrito completo (al iniciar checkout)
-    @Transactional
     public String reservarStockCarrito(ReservaStockDTO dto) {
         String reservaId = UUID.randomUUID().toString();
         List<ReservaItem> reservasRealizadas = new ArrayList<>();
@@ -119,7 +117,6 @@ public class InventarioService {
     }
     
     // Confirmar compra (convertir reservas en ventas)
-    @Transactional
     public void confirmarCompra(ConfirmarCompraDTO dto) {
         ReservaActiva reserva = reservasActivas.get(dto.reservaId);
         
@@ -144,7 +141,6 @@ public class InventarioService {
     }
     
     // Cancelar reserva (checkout fallido, carrito expirado, usuario cancela)
-    @Transactional
     public void cancelarReserva(String reservaId, String motivo) {
         ReservaActiva reserva = reservasActivas.remove(reservaId);
         
@@ -170,7 +166,6 @@ public class InventarioService {
     }
     
     // Reabastecer producto
-    @Transactional
     public void reabastecer(ReabastecerStockDTO dto) {
         Inventario inv = inventarioRepository.findByProductoIdAndVariante(dto.productoId, dto.variante);
         
@@ -191,7 +186,6 @@ public class InventarioService {
     }
     
     // Limpiar reservas expiradas (job programado)
-    @Transactional
     public int limpiarReservasExpiradas(int minutosExpiracion) {
         LocalDateTime fechaLimite = LocalDateTime.now().minusMinutes(minutosExpiracion);
         List<Inventario> inventariosConReservas = inventarioRepository.findReservasExpiradas(fechaLimite);

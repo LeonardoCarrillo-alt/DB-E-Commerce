@@ -40,6 +40,10 @@ nb-configuration.xml
 # Local environment
 .env
 
+# JWT keys (generar localmente, no subir al repositorio)
+src/main/resources/privateKey.pem
+src/main/resources/publicKey.pem
+
 # Plugin directory
 /.quarkus/cli/plugins/
 # TLS Certificates

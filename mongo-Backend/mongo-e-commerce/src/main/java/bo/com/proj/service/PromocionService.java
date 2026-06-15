@@ -6,7 +6,6 @@ import bo.com.proj.exception.ValidationException;
 import bo.com.proj.repository.PromocionRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.bson.types.ObjectId;
@@ -387,7 +386,6 @@ public class PromocionService {
     }
     
     // CRUD para administración de promociones
-    @Transactional
     public PromocionDTO crearPromocion(PromocionDTO dto, String creadoPor) {
         Promocion p = new Promocion();
         p.nombre = dto.nombre;
@@ -423,7 +421,6 @@ public class PromocionService {
         return dto;
     }
     
-    @Transactional
     public void eliminarPromocion(String id) {
         promocionRepository.deleteById(new ObjectId(id));
     }

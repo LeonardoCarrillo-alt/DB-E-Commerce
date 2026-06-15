@@ -16,13 +16,13 @@ public class CarritoRepository implements PanacheMongoRepository<Carrito>{
     }
 
     public Optional<Carrito> findByUsuarioIdAndInvitado(String usuarioId, Boolean invitado) {
-        return find("usuarioId = ?1 and invitado = ?2 and estado = ?3", 
+        return find("usuarioId = ?1 and invitado = ?2 and estado = ?3",
                     usuarioId, invitado, "ACTIVO").firstResultOptional();
     }
 
     public Optional<Carrito> findInvitadoBySessionId(String sessionId) {
-        return find("usuarioId = ?1 and invitado = true and estado = ?2", 
-                    sessionId, "ACTIVO").firstResultOptional();
+        return find("usuarioId = ?1 and invitado = ?2 and estado = ?3",
+                    sessionId, true, "ACTIVO").firstResultOptional();
     }
 
     public List<Carrito> findAbandonedCarritos(LocalDateTime fechaLimite) {
@@ -30,7 +30,7 @@ public class CarritoRepository implements PanacheMongoRepository<Carrito>{
     }
 
     public List<Carrito> findHistorialByUsuarioId(String usuarioId) {
-        return list("usuarioId = ?1 and estado != ?2 order by fechaCreacion desc", 
+        return list("usuarioId = ?1 and estado != ?2 order by fechaCreacion desc",
                     usuarioId, "ACTIVO");
     }
 
@@ -43,5 +43,5 @@ public class CarritoRepository implements PanacheMongoRepository<Carrito>{
     public boolean marcarComoCompletado(String carritoId) {
         return update("estado = ?1, fechaActualizacion = ?2", "COMPLETADO", LocalDateTime.now()).where("_id = ?3", carritoId) > 0;
     }
-    
+
 }

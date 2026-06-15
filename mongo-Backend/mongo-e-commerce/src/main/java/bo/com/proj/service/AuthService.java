@@ -3,7 +3,9 @@ package bo.com.proj.service;
 import bo.com.proj.client.PostgreSQLClient;
 import bo.com.proj.dto.LoginRequestDTO;
 import bo.com.proj.dto.LoginResponseDTO;
+import bo.com.proj.dto.RegisterRequestDTO;
 import bo.com.proj.dto.RefreshTokenRequestDTO;
+import bo.com.proj.dto.UsuarioCreateRequestDTO;
 import bo.com.proj.dto.UsuarioResponseDTO;
 import bo.com.proj.model.Usuario;
 import bo.com.proj.security.JwtService;
@@ -88,7 +90,8 @@ public class AuthService {
         
         // 5. Construir respuesta
         LoginResponseDTO response = new LoginResponseDTO();
-        response.accessToken = accessToken;
+        response.token = accessToken; // Para el frontend
+        response.accessToken = accessToken; // Para compatibilidad
         response.refreshToken = refreshToken;
         response.tokenType = "Bearer";
         response.expiresIn = 3600L;
@@ -103,6 +106,29 @@ public class AuthService {
         
         log.info("Usuario logueado: {} - {}", usuario.getEmail(), usuario.getRol());
         return response;
+    }
+
+    /**
+     * Registro - PostgreSQL sigue siendo el source of truth de usuarios.
+     */
+    public LoginResponseDTO register(RegisterRequestDTO request) {
+        UsuarioCreateRequestDTO createRequest = new UsuarioCreateRequestDTO();
+        createRequest.email = request.email;
+        createRequest.passwordHash = request.password;
+        createRequest.nombre = request.nombre;
+        createRequest.activo = true;
+
+        try {
+            postgresClient.createUsuario(createRequest);
+        } catch (Exception e) {
+            log.error("Error al registrar usuario en PostgreSQL: {}", e.getMessage());
+            throw new ValidationException("No se pudo registrar el usuario");
+        }
+
+        LoginRequestDTO loginRequest = new LoginRequestDTO();
+        loginRequest.email = request.email;
+        loginRequest.password = request.password;
+        return login(loginRequest);
     }
     
     /**
@@ -152,7 +178,8 @@ public class AuthService {
         ));
         
         LoginResponseDTO response = new LoginResponseDTO();
-        response.accessToken = newAccessToken;
+        response.token = newAccessToken; // Para el frontend
+        response.accessToken = newAccessToken; // Para compatibilidad
         response.refreshToken = newRefreshToken;
         response.tokenType = "Bearer";
         response.expiresIn = 3600L;

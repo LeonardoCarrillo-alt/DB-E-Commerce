@@ -26,10 +26,10 @@ public class Factura extends PanacheEntityBase {
     @Column(nullable = false, length = 20)
     private String rfc;
 
-    @Column(name = "xml_url")
+    @Column(name = "xml_url", columnDefinition = "TEXT")
     private String xmlUrl;
 
-    @Column(name = "pdf_url")
+    @Column(name = "pdf_url", columnDefinition = "TEXT")
     private String pdfUrl;
 
     public UUID getId() {

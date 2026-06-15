@@ -30,11 +30,32 @@ public class UsuarioResource {
     UsuarioService usuarioService;
 
     @GET
+    @Path("validar")
+    @Operation(summary = "Validar credenciales", description = "Valida email y password, retorna datos del usuario para generar JWT.")
+    @APIResponse(responseCode = "200", description = "Credenciales válidas")
+    @APIResponse(responseCode = "401", description = "Credenciales inválidas")
+    public Response validar(@QueryParam("email") String email,
+                            @QueryParam("password") String password) {
+        return Response.ok(DtoMapper.toResponse(usuarioService.validarCredenciales(email, password))).build();
+    }
+
+    @GET
     @Operation(summary = "Listar usuarios", description = "Obtiene todos los usuarios registrados.")
     @APIResponse(responseCode = "200", description = "Listado de usuarios", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = UsuarioResponse.class)))
     public Response listAll() {
         List<UsuarioResponse> response = usuarioService.listAll().stream().map(DtoMapper::toResponse).toList();
         return Response.ok(response).build();
+    }
+
+    @GET
+    @Path("me")
+    @Operation(summary = "Obtener usuario actual", description = "Recupera el usuario a partir del token JWT.")
+    @APIResponse(responseCode = "200", description = "Usuario encontrado", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = UsuarioResponse.class)))
+    @APIResponse(responseCode = "401", description = "No autorizado")
+    public Response getCurrentUser(@HeaderParam("Authorization") String authorization) {
+        // TODO: Implementar extracción de ID del token JWT
+        // Por ahora, retornamos un placeholder o podemos usar un usuario de prueba
+        return Response.status(Response.Status.NOT_IMPLEMENTED).build();
     }
 
     @GET

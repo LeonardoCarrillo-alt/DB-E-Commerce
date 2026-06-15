@@ -4,9 +4,24 @@ import com.ecommerce.postgres.dto.request.*;
 import com.ecommerce.postgres.dto.response.*;
 import com.ecommerce.postgres.entity.*;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
 
 public class DtoMapper {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static List<String> parsePermisos(String permisosJson) {
+        if (permisosJson == null || permisosJson.isBlank()) return Collections.emptyList();
+        try {
+            return OBJECT_MAPPER.readValue(permisosJson, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 
     private static void setId(Object entity, Object id) {
         try {
@@ -43,6 +58,15 @@ public class DtoMapper {
         response.setActivo(usuario.getActivo());
         response.setFechaCreacion(usuario.getFechaCreacion());
         response.setTiendaId(usuario.getTienda() != null ? usuario.getTienda().getId() : null);
+        if (usuario.getUsuarioRoles() != null && !usuario.getUsuarioRoles().isEmpty()) {
+            UsuarioRol usuarioRol = usuario.getUsuarioRoles().stream()
+                    .filter(ur -> Boolean.TRUE.equals(ur.getActivo()))
+                    .findFirst().orElse(null);
+            if (usuarioRol != null && usuarioRol.getRol() != null) {
+                response.setRol(usuarioRol.getRol().getNombre());
+                response.setPermisos(parsePermisos(usuarioRol.getRol().getPermisos()));
+            }
+        }
         return response;
     }
 

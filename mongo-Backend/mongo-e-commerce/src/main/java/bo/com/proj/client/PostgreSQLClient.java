@@ -1,11 +1,12 @@
 package bo.com.proj.client;
 
 import bo.com.proj.dto.UsuarioResponseDTO;
+import bo.com.proj.dto.UsuarioCreateRequestDTO;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
-@Path("/api")
+@Path("/")
 @RegisterRestClient(configKey = "postgresql-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -25,4 +26,8 @@ public interface PostgreSQLClient {
     @GET
     @Path("/usuarios/me")
     UsuarioResponseDTO getCurrentUser(@HeaderParam("Authorization") String token);
+
+    @POST
+    @Path("/usuarios")
+    UsuarioResponseDTO createUsuario(UsuarioCreateRequestDTO request);
 }
