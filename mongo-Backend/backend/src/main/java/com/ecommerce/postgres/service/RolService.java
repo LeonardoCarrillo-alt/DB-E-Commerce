@@ -44,6 +44,11 @@ public class RolService {
     @Transactional
     public Rol update(Long id, Rol rol) {
         Rol existing = findById(id);
+        if (rolRepository.findByNombre(rol.getNombre())
+                .filter(candidate -> !candidate.getId().equals(id))
+                .isPresent()) {
+            throw new BusinessException("Ya existe un rol con ese nombre");
+        }
         existing.setNombre(rol.getNombre());
         existing.setPermisos(rol.getPermisos());
         return existing;

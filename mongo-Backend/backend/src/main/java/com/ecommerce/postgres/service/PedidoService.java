@@ -67,6 +67,20 @@ public class PedidoService {
     @Transactional
     public Pedido update(UUID id, Pedido pedido) {
         Pedido existing = findById(id);
+        if (pedido.getUsuario() != null && pedido.getUsuario().getId() != null) {
+            Usuario usuario = entityManager.createQuery("select u from Usuario u where u.id = :id", Usuario.class)
+                    .setParameter("id", pedido.getUsuario().getId())
+                    .getResultStream()
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + pedido.getUsuario().getId()));
+            existing.setUsuario(usuario);
+        }
+        if (pedido.getTotal() == null || pedido.getTotal().compareTo(BigDecimal.ZERO) < 0) {
+            throw new BusinessException("El total del pedido no puede ser negativo");
+        }
+        if (pedido.getEstado() == null || pedido.getEstado().isBlank()) {
+            throw new BusinessException("El estado del pedido es obligatorio");
+        }
         existing.setEstado(pedido.getEstado());
         existing.setTotal(pedido.getTotal());
         return existing;

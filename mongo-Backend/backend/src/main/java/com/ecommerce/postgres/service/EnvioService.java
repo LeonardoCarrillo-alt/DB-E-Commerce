@@ -63,6 +63,17 @@ public class EnvioService {
     @Transactional
     public Envio update(UUID id, Envio envio) {
         Envio existing = findById(id);
+        if (envio.getPedido() != null && envio.getPedido().getId() != null) {
+            Pedido pedido = entityManager.createQuery("select p from Pedido p where p.id = :id", Pedido.class)
+                    .setParameter("id", envio.getPedido().getId())
+                    .getResultStream()
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + envio.getPedido().getId()));
+            existing.setPedido(pedido);
+        }
+        if (envio.getTrackingNumber() == null || envio.getTrackingNumber().isBlank()) {
+            throw new BusinessException("El número de tracking es obligatorio");
+        }
         existing.setEstado(envio.getEstado());
         existing.setProveedor(envio.getProveedor());
         existing.setTrackingNumber(envio.getTrackingNumber());

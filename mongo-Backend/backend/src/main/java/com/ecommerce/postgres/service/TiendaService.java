@@ -45,6 +45,11 @@ public class TiendaService {
     @Transactional
     public Tienda update(UUID id, Tienda tienda) {
         Tienda existing = findById(id);
+        if (tiendaRepository.findByNombre(tienda.getNombre())
+                .filter(candidate -> !candidate.getId().equals(id))
+                .isPresent()) {
+            throw new BusinessException("Ya existe una tienda con ese nombre");
+        }
         existing.setNombre(tienda.getNombre());
         existing.setDescripcion(tienda.getDescripcion());
         existing.setActivo(tienda.getActivo());

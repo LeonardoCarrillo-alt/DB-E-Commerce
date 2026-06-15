@@ -63,6 +63,17 @@ public class FacturaService {
     @Transactional
     public Factura update(UUID id, Factura factura) {
         Factura existing = findById(id);
+        if (factura.getPedido() != null && factura.getPedido().getId() != null) {
+            Pedido pedido = entityManager.createQuery("select p from Pedido p where p.id = :id", Pedido.class)
+                    .setParameter("id", factura.getPedido().getId())
+                    .getResultStream()
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado: " + factura.getPedido().getId()));
+            existing.setPedido(pedido);
+        }
+        if (factura.getRfc() == null || factura.getRfc().isBlank()) {
+            throw new BusinessException("El RFC de la factura es obligatorio");
+        }
         existing.setRfc(factura.getRfc());
         existing.setXmlUrl(factura.getXmlUrl());
         existing.setPdfUrl(factura.getPdfUrl());

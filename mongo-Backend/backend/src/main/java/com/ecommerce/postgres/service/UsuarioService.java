@@ -63,6 +63,11 @@ public class UsuarioService {
     @Transactional
     public Usuario update(UUID id, Usuario usuario) {
         Usuario existing = findById(id);
+        if (usuarioRepository.findByEmail(usuario.getEmail())
+                .filter(candidate -> !candidate.getId().equals(id))
+                .isPresent()) {
+            throw new BusinessException("Ya existe un usuario con ese email");
+        }
         existing.setEmail(usuario.getEmail());
         existing.setNombre(usuario.getNombre());
         existing.setPasswordHash(usuario.getPasswordHash());
