@@ -32,9 +32,9 @@ export default function Wishlist() {
 
   // Trae todos los productos y filtra por los que están en la wishlist
   // (en un escenario real, se haría una llamada con los IDs específicos)
-  const { data, isLoading } = useProducts({ limit: 100 })
+  const { data: products, isLoading } = useProducts()
 
-  const wishlistProducts = data?.products.filter((p) => wishlistIds.includes(p._id)) ?? []
+  const wishlistProducts = products?.filter((p) => wishlistIds.includes(p._id)) ?? []
 
   const handleRemove = (productId: string) => {
     const updated = toggleWishlist(productId)

@@ -21,7 +21,7 @@ public class CarritoRepository implements PanacheMongoRepository<Carrito>{
     }
 
     public Optional<Carrito> findInvitadoBySessionId(String sessionId) {
-        return find("usuarioId = ?1 and invitado = ?2 and estado = ?3",
+        return find("sessionId = ?1 and invitado = ?2 and estado = ?3",
                     sessionId, true, "ACTIVO").firstResultOptional();
     }
 
@@ -37,7 +37,7 @@ public class CarritoRepository implements PanacheMongoRepository<Carrito>{
     public long migrarCarritoInvitado(String sessionId, String usuarioId, String usuarioEmail) {
         return update("usuarioId = ?1, usuarioEmail = ?2, invitado = ?3, fechaActualizacion = ?4",
                       usuarioId, usuarioEmail, false, LocalDateTime.now())
-                .where("usuarioId = ?5 and invitado = true", sessionId);
+                .where("sessionId = ?5 and invitado = true", sessionId);
     }
 
     public boolean marcarComoCompletado(String carritoId) {

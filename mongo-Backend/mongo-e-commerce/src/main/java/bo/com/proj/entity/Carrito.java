@@ -16,6 +16,8 @@ public class Carrito extends PanacheMongoEntity {
     public String usuarioId;
     @BsonProperty("usuario_email")
     public String usuarioEmail;
+    @BsonProperty("session_id")
+    public String sessionId;
     public List<ItemCarrito> items = new ArrayList<>();
     public BigDecimal subtotal = BigDecimal.ZERO;
     public BigDecimal descuento = BigDecimal.ZERO;

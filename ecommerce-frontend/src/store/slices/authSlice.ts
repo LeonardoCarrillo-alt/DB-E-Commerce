@@ -11,6 +11,7 @@ interface AuthUser {
   nombre: string
   email: string
   rol: 'SUPER_ADMIN' | 'ADMIN_TIENDA' | 'VENDEDOR' | 'CLIENTE'
+  tiendaId?: string
 }
 
 interface AuthState {

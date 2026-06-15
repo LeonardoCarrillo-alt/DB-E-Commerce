@@ -20,23 +20,23 @@ interface Props {
  * Electrónica → voltaje, ram | Ropa → tallas, material | etc.
  */
 const DYNAMIC_FIELDS: Record<string, { key: string; label: string; type: 'text' | 'tags' }[]> = {
-  'Electrónica': [
+  electronica: [
     { key: 'voltaje', label: 'Voltaje (ej. 220V)', type: 'text' },
     { key: 'ram', label: 'RAM (ej. 16GB)', type: 'text' },
   ],
-  'Ropa': [
+  ropa: [
     { key: 'tallas', label: 'Tallas (separadas por coma: S,M,L)', type: 'tags' },
     { key: 'material', label: 'Material', type: 'text' },
   ],
-  'Muebles': [
+  muebles: [
     { key: 'dimensiones', label: 'Dimensiones (ej. 120x60x75 cm)', type: 'text' },
     { key: 'material', label: 'Material', type: 'text' },
   ],
-  'Adornos': [
+  adornos: [
     { key: 'material', label: 'Material', type: 'text' },
     { key: 'estilo', label: 'Estilo', type: 'text' },
   ],
-  'Utensilios de cocina': [
+  utensilios_cocina: [
     { key: 'material', label: 'Material', type: 'text' },
     { key: 'capacidad', label: 'Capacidad (ej. 1.5L)', type: 'text' },
   ],

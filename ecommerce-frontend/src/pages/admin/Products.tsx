@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Box, Typography, Button, Grid, Card, CardContent, IconButton,
   Dialog, DialogTitle, DialogContent, Chip, TextField, InputAdornment,
@@ -12,10 +12,14 @@ import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } fro
 import ProductForm from '../../components/forms/ProductForm'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { ProductGridSkeleton } from '../../components/common/Loading'
+import { useAuth } from '../../store/hooks/useAuth'
 import type { Product } from '../../api/productApi'
 import type { ProductFormValues } from '../../schemas'
 
+const PAGE_SIZE = 12
+
 export default function AdminProducts() {
+  const { user } = useAuth()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -24,7 +28,7 @@ export default function AdminProducts() {
     open: false, message: '', severity: 'success',
   })
 
-  const { data, isLoading } = useProducts({ page, limit: 12,  })
+  const { data: products, isLoading } = useProducts()
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
   const deleteProduct = useDeleteProduct()
@@ -45,7 +49,7 @@ export default function AdminProducts() {
         await updateProduct.mutateAsync({ id: editingProduct._id, data: { ...values, ...extraAttrs } as Partial<Product> })
         setSnackbar({ open: true, message: 'Producto actualizado correctamente', severity: 'success' })
       } else {
-        await createProduct.mutateAsync({ ...values, ...extraAttrs, activo: true, tiendaId: "" } as unknown as Omit<Product, "_id">)
+        await createProduct.mutateAsync({ ...values, ...extraAttrs, activo: true, tienda_id: user?.tiendaId ?? "" } as unknown as Omit<Product, "_id">)
         setSnackbar({ open: true, message: 'Producto creado correctamente', severity: 'success' })
       }
       setDialogOpen(false)
@@ -64,7 +68,15 @@ export default function AdminProducts() {
     }
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / 12)) : 1
+  const filtered = useMemo(() => {
+    if (!products) return []
+    return products.filter((p) =>
+      !search || p.nombre.toLowerCase().includes(search.toLowerCase())
+    )
+  }, [products, search])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
     <Box>
@@ -72,7 +84,7 @@ export default function AdminProducts() {
         <Box>
           <Typography variant="h4" fontWeight={800}>Productos</Typography>
           <Typography variant="body2" color="text.secondary">
-            {data ? `${data.total} productos en el catálogo` : 'Cargando...'}
+            {products ? `${products.length} productos en el catálogo` : 'Cargando...'}
           </Typography>
         </Box>
         <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
@@ -93,7 +105,7 @@ export default function AdminProducts() {
         <ProductGridSkeleton />
       ) : (
         <Grid container spacing={2}>
-          {(data?.products ?? []).map((product) => (
+          {paginated.map((product) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
               <Card>
                 <CardContent>

@@ -18,6 +18,7 @@ import bo.com.proj.repository.PromocionRepository;
 import org.bson.types.ObjectId;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,6 +31,8 @@ import org.bson.types.ObjectId;
 
 @ApplicationScoped
 public class CarritoService {
+    
+    private static final Logger LOGGER = Logger.getLogger(CarritoService.class);
     
     @Inject
     CarritoRepository carritoRepository;
@@ -88,9 +91,15 @@ public class CarritoService {
     }
     
     // Crear nuevo carrito
-    public Carrito crearNuevoCarrito(String usuarioId, String usuarioEmail, Boolean esInvitado) {
+    public Carrito crearNuevoCarrito(String usuarioIdOSessionId, String usuarioEmail, Boolean esInvitado) {
         Carrito carrito = new Carrito();
-        carrito.usuarioId = usuarioId;
+        if (esInvitado) {
+            carrito.sessionId = usuarioIdOSessionId;
+            carrito.usuarioId = null;
+        } else {
+            carrito.usuarioId = usuarioIdOSessionId;
+            carrito.sessionId = null;
+        }
         carrito.usuarioEmail = usuarioEmail;
         carrito.invitado = esInvitado;
         carrito.estado = "ACTIVO";
@@ -227,32 +236,82 @@ public class CarritoService {
     }
     
     public CarritoDTO migrarCarritoInvitado(String sessionId, String usuarioId, String usuarioEmail) {
+        LOGGER.infof("=== MIGRAR CARRITO INVITADO === sessionId=%s, usuarioId=%s, usuarioEmail=%s", sessionId, usuarioId, usuarioEmail);
+        
+        // Buscar carrito invitado por sessionId
         Optional<Carrito> carritoInvitadoOpt = carritoRepository.findInvitadoBySessionId(sessionId);
-        Optional<Carrito> carritoUsuarioOpt = carritoRepository.findByUsuarioId(usuarioId);
+        LOGGER.infof("Carrito invitado encontrado: %s", carritoInvitadoOpt.isPresent());
+        
+        // Buscar carrito del usuario por usuarioEmail (el email se usa como usuario_id en MongoDB)
+        Optional<Carrito> carritoUsuarioOpt = carritoRepository.find("usuario_email = ?1", usuarioEmail)
+                .firstResultOptional();
+        
+        if (!carritoUsuarioOpt.isPresent()) {
+            // Si no encuentra por usuario_email, buscar por usuario_id
+            carritoUsuarioOpt = carritoRepository.find("usuario_id", usuarioEmail)
+                    .firstResultOptional();
+            LOGGER.infof("Carrito usuario encontrado por usuario_id: %s", carritoUsuarioOpt.isPresent());
+        } else {
+            LOGGER.infof("Carrito usuario encontrado por usuario_email: %s", carritoUsuarioOpt.isPresent());
+        }
         
         Carrito carritoDestino;
         
-        if (carritoUsuarioOpt.isPresent()) {
-            carritoDestino = carritoUsuarioOpt.get();
+        if (carritoInvitadoOpt.isPresent()) {
+            // Existe carrito invitado
             Carrito carritoInvitado = carritoInvitadoOpt.get();
+            LOGGER.infof("Carrito invitado actual - usuarioId: %s, sessionId: %s", carritoInvitado.usuarioId, carritoInvitado.sessionId);
             
-            for (Carrito.ItemCarrito item : carritoInvitado.items) {
-                carritoDestino.agregarItem(item);
+            if (carritoUsuarioOpt.isPresent()) {
+                // Caso 1: Usuario ya tiene carrito → Fusionar items del invitado
+                carritoDestino = carritoUsuarioOpt.get();
+                LOGGER.infof("Caso 1: Merging guest cart into user cart");
+                
+                for (Carrito.ItemCarrito item : carritoInvitado.items) {
+                    carritoDestino.agregarItem(item);
+                }
+                carritoDestino.fechaActualizacion = LocalDateTime.now();
+                carritoRepository.update(carritoDestino);
+                
+                carritoInvitado.estado = "COMPLETADO";
+                carritoInvitado.fechaActualizacion = LocalDateTime.now();
+                carritoRepository.update(carritoInvitado);
+            } else {
+                // Caso 2: Solo existe carrito invitado → Migrar directamente
+                LOGGER.infof("Caso 2: Migrating guest cart to user cart");
+                carritoInvitado.usuarioId = usuarioEmail; // Usar email como usuario_id (coincide con índice)
+                carritoInvitado.usuarioEmail = usuarioEmail;
+                carritoInvitado.sessionId = null; // Limpiar sessionId después de migrar
+                carritoInvitado.invitado = false;
+                carritoInvitado.fechaActualizacion = LocalDateTime.now();
+                carritoRepository.update(carritoInvitado);
+                carritoDestino = carritoInvitado;
             }
-            carritoRepository.update(carritoDestino);
-            carritoInvitado.estado = "COMPLETADO";
-            carritoRepository.update(carritoInvitado);
-        } else if (carritoInvitadoOpt.isPresent()) {
-            Carrito carritoInvitado = carritoInvitadoOpt.get();
-            carritoInvitado.usuarioId = usuarioId;
-            carritoInvitado.usuarioEmail = usuarioEmail;
-            carritoInvitado.invitado = false;
-            carritoInvitado.fechaActualizacion = LocalDateTime.now();
-            carritoRepository.update(carritoInvitado);
-            carritoDestino = carritoInvitado;
         } else {
-
-            carritoDestino = crearNuevoCarrito(usuarioId, usuarioEmail, false);
+            // Caso 3: No existe carrito invitado
+            LOGGER.infof("Caso 3: No guest cart found");
+            if (carritoUsuarioOpt.isPresent()) {
+                // Usuario ya tiene carrito registrado, solo retornarlo
+                carritoDestino = carritoUsuarioOpt.get();
+                LOGGER.infof("Returning existing user cart");
+            } else {
+                // No existe ningún carrito, retornar carrito vacío del usuario
+                LOGGER.infof("No cart found, returning empty cart for user");
+                carritoDestino = new Carrito();
+                carritoDestino.usuarioId = usuarioEmail;
+                carritoDestino.usuarioEmail = usuarioEmail;
+                carritoDestino.invitado = false;
+                carritoDestino.estado = "ACTIVO";
+                carritoDestino.items = new java.util.ArrayList<>();
+                carritoDestino.subtotal = BigDecimal.ZERO;
+                carritoDestino.descuento = BigDecimal.ZERO;
+                carritoDestino.total = BigDecimal.ZERO;
+                carritoDestino.fechaCreacion = LocalDateTime.now();
+                carritoDestino.fechaActualizacion = LocalDateTime.now();
+                
+                // NO guardamos, solo devolvemos el carrito vacío
+                // Esto evita el E11000 duplicate key error
+            }
         }
         
         return toDTO(carritoDestino);
@@ -308,16 +367,16 @@ public class CarritoService {
         public BigDecimal total;
         public BigDecimal montoDescuento;
     }
-    private Carrito getCarritoEntity(String usuarioId, String usuarioEmail, Boolean esInvitado) {
+    private Carrito getCarritoEntity(String usuarioIdOSessionId, String usuarioEmail, Boolean esInvitado) {
         Optional<Carrito> carritoOpt;
         
         if (esInvitado) {
-            carritoOpt = carritoRepository.findInvitadoBySessionId(usuarioId);
+            carritoOpt = carritoRepository.findInvitadoBySessionId(usuarioIdOSessionId);
         } else {
-            carritoOpt = carritoRepository.findByUsuarioId(usuarioId);
+            carritoOpt = carritoRepository.findByUsuarioId(usuarioIdOSessionId);
         }
         
-        return carritoOpt.orElseGet(() -> crearNuevoCarrito(usuarioId, usuarioEmail, esInvitado));
+        return carritoOpt.orElseGet(() -> crearNuevoCarrito(usuarioIdOSessionId, usuarioEmail, esInvitado));
     }
     
     private BigDecimal calcularDescuento(Promocion promocion, Carrito carrito) {

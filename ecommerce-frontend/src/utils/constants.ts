@@ -45,7 +45,7 @@ export const CATEGORIES = [
   'electronica',
   'muebles',
   'adornos',
-  'cocina',
+  'utensilios_cocina',
 ] as const
 
 export type ProductCategory = (typeof CATEGORIES)[number]
@@ -56,7 +56,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   electronica: 'Electrónica',
   muebles: 'Muebles',
   adornos: 'Adornos',
-  cocina: 'Utensilios de cocina',
+  utensilios_cocina: 'Utensilios de cocina',
 }
 
 // Paginación por defecto
