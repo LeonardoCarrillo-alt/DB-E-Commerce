@@ -23,6 +23,12 @@ export const authService = {
     return data
   },
 
+  async register(payload: RegisterPayload) {
+    const { data } = await authApi.register(payload)
+    this.persistSession(data.token, data.refreshToken, data.user)
+    return data
+  },
+
   async logout() {
     try {
       await authApi.logout()

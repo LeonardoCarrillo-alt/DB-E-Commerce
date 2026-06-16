@@ -23,7 +23,7 @@ export default function ProductCard({ product }: Props) {
     e.preventDefault()
     dispatch(
       addItem({
-        productId: product._id,
+        productId: product.id,
         nombre: product.nombre,
         precio: product.precio,
         cantidad: 1,
@@ -36,7 +36,7 @@ export default function ProductCard({ product }: Props) {
   return (
     <Card
       component={Link}
-      to={`/catalog/${product._id}`}
+      to={`/catalog/${product.id}`}
       sx={{ display: 'flex', flexDirection: 'column', height: '100%', textDecoration: 'none' }}
     >
       {/* Imagen */}

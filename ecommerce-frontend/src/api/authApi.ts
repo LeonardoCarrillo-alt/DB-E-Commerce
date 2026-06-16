@@ -1,4 +1,4 @@
-import axiosInstance from './axios'
+import { axiosMongo } from './axios'
 
 export interface LoginPayload {
   email: string
@@ -29,21 +29,21 @@ export interface AuthResponse {
 export const authApi = {
   /** POST /auth/login */
   login: (data: LoginPayload) =>
-    axiosInstance.post<AuthResponse>('/auth/login', data),
+    axiosMongo.post<AuthResponse>('/auth/login', data),
 
   /** POST /auth/register */
   register: (data: RegisterPayload) =>
-    axiosInstance.post<AuthResponse>('/auth/register', data),
+    axiosMongo.post<AuthResponse>('/auth/register', data),
 
   /** POST /auth/refresh */
   refreshToken: (refreshToken: string) =>
-    axiosInstance.post<{ token: string }>('/auth/refresh', { refreshToken }),
+    axiosMongo.post<{ token: string }>('/auth/refresh', { refreshToken }),
 
   /** POST /auth/logout — requiere Authorization header */
   logout: () =>
-    axiosInstance.post('/auth/logout'),
+    axiosMongo.post('/auth/logout'),
 
   /** GET /auth/me — retorna el usuario desde el JWT */
   getMe: () =>
-    axiosInstance.get<AuthUser>('/auth/me'),
+    axiosMongo.get<AuthUser>('/auth/me'),
 }

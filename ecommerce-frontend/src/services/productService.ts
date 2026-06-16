@@ -1,4 +1,4 @@
-import { productApi, busquedaApi, type Product, type ProductFilters, type ProductSearchBody, type AdvancedSearchBody } from '../api/productApi'
+import { productApi, busquedaApi, type Product, type CreateProduct, type ProductFilters, type ProductSearchBody, type AdvancedSearchBody } from '../api/productApi'
 import type { ProductFormValues } from '../schemas'
 
 export const productService = {
@@ -54,7 +54,7 @@ export const productService = {
     values: ProductFormValues,
     extraAttrs: Record<string, unknown> = {},
     tiendaId: string
-  ): Omit<Product, '_id'> {
+  ): CreateProduct {
     return {
       nombre: values.nombre,
       descripcion: values.descripcion,

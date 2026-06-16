@@ -1,0 +1,220 @@
+### =============================================================================
+### API Demo: Integración MongoDB ↔ PostgreSQL — E-commerce Multitienda
+### =============================================================================
+### Este archivo demuestra el flujo completo de integración entre ambas
+### bases de datos usando la API Gateway (http://localhost:8080).
+###
+### Requisitos:
+###   - Tener los servicios ejecutándose: docker-compose up -d
+###   - VS Code con extensión "REST Client"
+### =============================================================================
+
+### ── Variables ───────────────────────────────────────────────────────────────
+
+@baseUrl = http://localhost:8080
+@email = cliente@ecommerce.com
+@password = admin123
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 1: Autenticación (valida contra PostgreSQL vía REST Client)
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /auth/login
+###   → mongo-backend llama a postgres-backend: GET /usuarios/validar
+###   → postgres-backend verifica BCrypt(password, hash) en PostgreSQL
+###   → Retorna JWT con sub=usuario.id (UUID de PostgreSQL)
+### ═════════════════════════════════════════════════════════════════════════════
+
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### Almacenar tokens
+### ═════════════════════════════════════════════════════════════════════════════
+
+@accessToken = {{login.response.body.accessToken}}
+@refreshToken = {{login.response.body.refreshToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 2: Obtener perfil del usuario
+### ═════════════════════════════════════════════════════════════════════════════
+### GET /auth/me
+###   → Lee el JWT, extrae sub (UUID de PostgreSQL)
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 3: Obtener catálogo de productos (MongoDB)
+### ═════════════════════════════════════════════════════════════════════════════
+### GET /productos
+###   → Consulta directa a MongoDB (colección productos)
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/productos
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 4: Búsqueda avanzada (MongoDB — operadores $gte, $lte, $and, $or)
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /productos/buscar
+###   → Usa $gte/$lte para rango de precio
+###   → Usa $and para combinar filtros
+###   → Usa $or para atributos dinámicos
+### ═════════════════════════════════════════════════════════════════════════════
+
+POST {{baseUrl}}/productos/buscar
+Content-Type: application/json
+
+{
+  "query": "laptop",
+  "precioMin": 100,
+  "precioMax": 5000,
+  "categoria": "electronica",
+  "atributos": {
+    "marca": "Sony"
+  }
+}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 5: Obtener carrito del usuario (MongoDB — cross-ref con PostgreSQL UUID)
+### ═════════════════════════════════════════════════════════════════════════════
+### GET /carrito
+###   → Crea o recupera carrito en MongoDB
+###   → carrito.usuarioId = JWT.sub (UUID de PostgreSQL)
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/carrito
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 6: Agregar producto al carrito (MongoDB)
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /carrito/items
+###   → Busca producto en MongoDB por _id
+###   → Valida stock en MongoDB (inventario)
+###   → Agrega item al carrito en MongoDB
+### ═════════════════════════════════════════════════════════════════════════════
+### NOTA: Reemplazar PRODUCT_ID con un _id real del paso 3
+### ═════════════════════════════════════════════════════════════════════════════
+
+POST {{baseUrl}}/carrito/items
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_REAL",
+  "cantidad": 2,
+  "variante": "talla-M-color-rojo"
+}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 7: Resumen de checkout (MongoDB — valida stock + calcula totales)
+### ═════════════════════════════════════════════════════════════════════════════
+### GET /carrito/checkout/resumen
+###   → Valida stock de cada item contra MongoDB (inventario)
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/carrito/checkout/resumen
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 8: Procesar checkout (MongoDB — reserva stock)
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /carrito/checkout/procesar
+###   → Reserva stock en MongoDB (inventario.stockReservado)
+###   → Retorna reservaId (UUID v4 generado en Java)
+### ═════════════════════════════════════════════════════════════════════════════
+
+# @name checkout
+POST {{baseUrl}}/carrito/checkout/procesar
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### Almacenar reservaId y carritoId
+### ═════════════════════════════════════════════════════════════════════════════
+
+@reservaId = {{checkout.response.body.reserva_id}}
+@carritoId = {{checkout.response.body.carrito.id}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 9: Crear orden (INTEGRACIÓN CRÍTICA — MongoDB + PostgreSQL)
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /orders
+###   PASO 1: Obtiene carrito de MongoDB (carritos)
+###   PASO 2: Llama a postgres-backend: POST /pedidos
+###           → Crea Pedido en PostgreSQL (UUID auto-generado)
+###           → Crea DetallePedido con producto_id (ObjectId string)
+###   PASO 3: Confirma reserva en MongoDB (inventario.confirmarCompra)
+###           → Usa orderId = Pedido.id (UUID de PostgreSQL)
+### ═════════════════════════════════════════════════════════════════════════════
+
+# @name createOrder
+POST {{baseUrl}}/orders
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "reservaId": "{{reservaId}}",
+  "carritoId": "{{carritoId}}",
+  "direccionEnvio": {
+    "calle": "Av. Siempre Viva 123",
+    "ciudad": "La Paz",
+    "codigoPostal": "00000",
+    "pais": "Bolivia"
+  },
+  "metodoPago": "VISA"
+}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### PASO 10: Verificar órdenes del usuario
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/orders/my
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### FLUJO INVITADO: Carrito sin autenticación
+### ═════════════════════════════════════════════════════════════════════════════
+
+### Obtener carrito como invitado (X-Session-Id + X-Invitado)
+GET {{baseUrl}}/carrito
+X-Session-Id: session-demo-12345
+X-Invitado: true
+
+### Agregar producto como invitado
+POST {{baseUrl}}/carrito/items
+X-Session-Id: session-demo-12345
+X-Invitado: true
+Content-Type: application/json
+
+{
+  "productoId": "REEMPLAZAR_CON_ID_REAL",
+  "cantidad": 1
+}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### FLUJO DE MIGRACIÓN: Invitado → Autenticado
+### ═════════════════════════════════════════════════════════════════════════════
+### POST /carrito/migrar?sessionId=session-demo-12345
+###   → Encuentra carrito invitado en MongoDB por sessionId
+###   → Encuentra carrito usuario en MongoDB por usuarioId (UUID PostgreSQL)
+###   → Fusiona items (invitado → usuario)
+###   → Elimina carrito de invitado
+### ═════════════════════════════════════════════════════════════════════════════
+
+POST {{baseUrl}}/carrito/migrar?sessionId=session-demo-12345
+Authorization: Bearer {{accessToken}}
+
+### ═════════════════════════════════════════════════════════════════════════════
+### INVENTARIO: Consultar stock de un producto (MongoDB)
+### ═════════════════════════════════════════════════════════════════════════════
+
+GET {{baseUrl}}/inventario/stock/REEMPLAZAR_CON_ID_REAL
+Authorization: Bearer {{accessToken}}
