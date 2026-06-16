@@ -10,4 +10,5 @@ public class UsuarioResponseDTO {
     public String tiendaId;
     public Boolean activo;
     public List<String> permisos;
+    public String fechaCreacion;
 }

@@ -6,11 +6,17 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
+import java.util.List;
+
 @Path("/")
 @RegisterRestClient(configKey = "postgresql-api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public interface PostgreSQLClient {
+
+    @GET
+    @Path("/usuarios")
+    List<UsuarioResponseDTO> listAll();
     
     @GET
     @Path("/usuarios/validar")

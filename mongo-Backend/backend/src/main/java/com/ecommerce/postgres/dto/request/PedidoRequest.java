@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public class PedidoRequest {
@@ -19,6 +20,8 @@ public class PedidoRequest {
     @NotBlank
     private String estado;
 
+    private List<DetallePedidoRequest> items;
+
     public UUID getUsuarioId() { return usuarioId; }
     public void setUsuarioId(UUID usuarioId) { this.usuarioId = usuarioId; }
 
@@ -27,4 +30,7 @@ public class PedidoRequest {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public List<DetallePedidoRequest> getItems() { return items; }
+    public void setItems(List<DetallePedidoRequest> items) { this.items = items; }
 }

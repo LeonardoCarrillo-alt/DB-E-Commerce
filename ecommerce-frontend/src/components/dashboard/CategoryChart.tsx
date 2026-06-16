@@ -10,6 +10,7 @@ interface CategoryData {
 
 interface Props {
   data?: CategoryData[]
+  title?: string
 }
 
 const DEFAULT_DATA: CategoryData[] = [
@@ -22,12 +23,14 @@ const DEFAULT_DATA: CategoryData[] = [
 
 const COLORS = ['#5c6bc0', '#ff6f61', '#66bb6a', '#ffa726', '#29b6f6']
 
-export default function CategoryChart({ data = DEFAULT_DATA }: Props) {
+export default function CategoryChart({ data = DEFAULT_DATA, title = 'Ventas por categoría' }: Props) {
+  const total = data.reduce((sum, d) => sum + d.value, 0)
+
   return (
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight={700} gutterBottom>
-          Ventas por categoría
+          {title}
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
           <ResponsiveContainer width="100%" height={260}>
@@ -45,7 +48,10 @@ export default function CategoryChart({ data = DEFAULT_DATA }: Props) {
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => [`${value}%`, 'Participación']} />
+              <Tooltip formatter={(value: number) => {
+                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0'
+                return [`${pct}% (${value})`, 'Cantidad']
+              }} />
               <Legend iconType="circle" iconSize={10} />
             </PieChart>
           </ResponsiveContainer>

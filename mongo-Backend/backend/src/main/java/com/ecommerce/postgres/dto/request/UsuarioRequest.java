@@ -1,4 +1,4 @@
-package com.ecommerce.postgres.dto.request; // Asegúrate de mantener tu package real
+package com.ecommerce.postgres.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
@@ -14,10 +14,8 @@ public class UsuarioRequest {
     @Size(max = 100)
     private String email;
 
-    // 🚨 CAMBIO CLAVE: Renombramos la variable física a snake_case directo en Java
     @NotBlank
-    @JsonProperty("password_hash") 
-    private String password_hash;
+    private String passwordHash;
 
     @NotBlank
     @Size(max = 100)
@@ -33,9 +31,8 @@ public class UsuarioRequest {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    // 🚨 Ajustamos Getter y Setter para la nueva variable física
-    public String getPasswordHash() { return password_hash; }
-    public void setPassword_hash(String password_hash) { this.password_hash = password_hash; }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public String getNombre() { return nombre; }
     public void setNombre(String nombre) { this.nombre = nombre; }
