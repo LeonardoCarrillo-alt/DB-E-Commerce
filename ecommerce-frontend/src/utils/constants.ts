@@ -1,5 +1,8 @@
 // URLs de la API
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+export const API_MONGO_BASE_URL = import.meta.env.VITE_MONGO_API_URL || 'http://localhost:8080'
+export const API_POSTGRES_BASE_URL = import.meta.env.VITE_POSTGRES_API_URL || 'http://localhost:8082'
+// Backwards compatibility: legacy `API_BASE_URL` falls back to API_MONGO_BASE_URL
+export const API_BASE_URL = import.meta.env.VITE_API_URL || API_MONGO_BASE_URL
 
 // Roles de usuario
 export const ROLES = {

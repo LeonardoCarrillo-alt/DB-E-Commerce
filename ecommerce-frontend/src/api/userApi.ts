@@ -1,29 +1,29 @@
-import axiosInstance from './axios'
+import { axiosPostgres } from './axios'
 
 export interface User {
-  id: number
+  id: string
   uuid: string
   nombre: string
   email: string
   telefono?: string
-  rol: 'ADMIN' | 'CLIENTE'
+  rol: 'SUPER_ADMIN' | 'ADMIN_TIENDA' | 'VENDEDOR' | 'CLIENTE'
   activo: boolean
   createdAt: string
 }
 
 export const userApi = {
   getAll: () =>
-    axiosInstance.get<User[]>('/users'),
+    axiosPostgres.get<User[]>('/usuarios'),
 
-  getById: (id: number) =>
-    axiosInstance.get<User>(`/users/${id}`),
+  getById: (id: string) =>
+    axiosPostgres.get<User>(`/usuarios/${id}`),
 
-  updateProfile: (id: number, data: Partial<User>) =>
-    axiosInstance.put<User>(`/users/${id}`, data),
+  updateProfile: (id: string, data: Partial<User>) =>
+    axiosPostgres.put<User>(`/usuarios/${id}`, data),
 
-  changePassword: (id: number, data: { currentPassword: string; newPassword: string }) =>
-    axiosInstance.patch(`/users/${id}/password`, data),
+  changePassword: (id: string, data: { currentPassword: string; newPassword: string }) =>
+    axiosPostgres.patch(`/usuarios/${id}/password`, data),
 
-  deactivate: (id: number) =>
-    axiosInstance.patch(`/users/${id}/deactivate`),
+  deactivate: (id: string) =>
+    axiosPostgres.patch(`/usuarios/${id}/deactivate`),
 }

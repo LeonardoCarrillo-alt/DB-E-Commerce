@@ -81,7 +81,7 @@ export default function Customers() {
                     <Chip
                       label={user.rol}
                       size="small"
-                      color={user.rol === 'ADMIN' ? 'primary' : 'default'}
+                      color={user.rol === 'ADMIN_TIENDA' || user.rol === 'SUPER_ADMIN' ? 'primary' : 'default'}
                       sx={{ fontWeight: 600 }}
                     />
                   </TableCell>

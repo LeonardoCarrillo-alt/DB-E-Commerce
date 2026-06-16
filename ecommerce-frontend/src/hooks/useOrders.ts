@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { orderApi, type CreateOrderPayload } from '../api/orderApi'
 import type { OrderStatus } from '../utils/constants'
+import { useAuth } from '../store/hooks/useAuth'
 
 export function useMyOrders() {
+  const { user } = useAuth()
   return useQuery({
-    queryKey: ['orders', 'my'],
-    queryFn: () => orderApi.getMyOrders().then((res) => res.data),
+    queryKey: ['orders', 'my', user?.id],
+    queryFn: () => orderApi.getMyOrders(user!.id).then((res) => res.data),
+    enabled: !!user?.id,
   })
 }
 
@@ -16,10 +19,10 @@ export function useAllOrders() {
   })
 }
 
-export function useOrder(id: number | undefined) {
+export function useOrder(id: string | undefined) {
   return useQuery({
     queryKey: ['order', id],
-    queryFn: () => orderApi.getById(id as number).then((res) => res.data),
+    queryFn: () => orderApi.getById(id as string).then((res) => res.data),
     enabled: !!id,
   })
 }
@@ -37,7 +40,7 @@ export function useCreateOrder() {
 export function useUpdateOrderStatus() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, estado }: { id: number; estado: OrderStatus }) =>
+    mutationFn: ({ id, estado }: { id: string; estado: OrderStatus }) =>
       orderApi.updateStatus(id, estado).then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
