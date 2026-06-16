@@ -57,7 +57,14 @@ public class ProductoService {
         p.tiendaId = dto.tiendaId;
         p.atributos = dto.atributos;
         if (dto.activo != null) p.activo = dto.activo;
-        productoRepository.update(p);
+        p.stockDisponible = dto.stockDisponible;
+        p.disponible = dto.disponible;
+        System.out.println("=======================================================");
+    System.out.println("Guardando en MongoDB: " + p.stockDisponible);
+    System.out.println("=======================================================");
+    
+    // 🌟 REEMPLAZO CRÍTICO PARA PANACHE REPOSITORY:
+    productoRepository.persistOrUpdate(p);
         return toDTO(p);
     }
 
@@ -81,18 +88,24 @@ public class ProductoService {
                 .collect(Collectors.toList());
     }
 
-    private ProductoDTO toDTO(Producto p) {
-        ProductoDTO dto = new ProductoDTO();
-        dto.id = p.id.toString();
-        dto.nombre = p.nombre;
-        dto.descripcion = p.descripcion;
-        dto.precio = p.precio;
-        dto.categoria = p.categoria;
-        dto.tiendaId = p.tiendaId;
-        dto.atributos = p.atributos;
-        dto.activo = p.activo;
-        return dto;
-    }
+    public ProductoDTO toDTO(Producto p) {
+    if (p == null) return null;
+    ProductoDTO dto = new ProductoDTO();
+    dto.id = p.id != null ? p.id.toString() : null;
+    dto.nombre = p.nombre;
+    dto.descripcion = p.descripcion;
+    dto.precio = p.precio;
+    dto.categoria = p.categoria;
+    dto.tiendaId = p.tiendaId;
+    dto.atributos = p.atributos;
+    dto.activo = p.activo;
+
+    // 🌟 AGREGA ESTAS DOS LÍNEAS AQUÍ:
+    dto.stockDisponible = p.stockDisponible;
+    dto.disponible = p.disponible;
+
+    return dto;
+}   
 
     private Producto toEntity(ProductoDTO dto) {
         Producto p = new Producto();

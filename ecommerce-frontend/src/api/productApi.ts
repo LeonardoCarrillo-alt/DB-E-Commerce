@@ -18,19 +18,16 @@ export interface ProductAtributos {
 }
 
 export interface Product {
-  _id?: string
-  id?: string
+  id?: string           // El backend usa "id"
   nombre: string
   descripcion: string
   precio: number
   categoria: string
-  tiendaId: string  // ← camelCase consistente
-  atributos?: ProductAtributos
+  tiendaId: string      // camelCase consistente
+  atributos?: Record<string, unknown>
   activo?: boolean
-  imagenes?: string[]
-  etiquetas?: string[]
-  variantes?: string[]
-  stock?: number
+  stockDisponible: number // 🌟 AQUÍ ESTÁ: Igual al formato del POST
+  disponible?: boolean
 }
 
 export interface ProductsResponse {

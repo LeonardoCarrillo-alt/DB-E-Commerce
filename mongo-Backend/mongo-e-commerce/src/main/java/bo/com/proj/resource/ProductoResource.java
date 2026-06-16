@@ -48,6 +48,13 @@ public class ProductoResource {
     @RolesAllowed({"ADMIN_TIENDA", "SUPER_ADMIN"})
     @Operation(summary = "Crear un nuevo producto (solo admin)")
     public Response create(@Valid ProductoDTO dto) {
+        System.out.println("================= DATA ENTRANTE (DTO) =================");
+        System.out.println("Nombre: " + dto.nombre);
+        System.out.println("Tienda ID: " + dto.tiendaId);
+        System.out.println("Stock Disponible: " + dto.stockDisponible);
+        System.out.println("Disponible (Boolean): " + dto.disponible);
+        System.out.println("Atributos (Map): " + dto.atributos);
+        System.out.println("=======================================================");
         if (!authService.canAccessTienda(dto.tiendaId)) {
             return Response.status(Response.Status.FORBIDDEN)
                 .entity("No tienes acceso a esta tienda")
@@ -62,6 +69,13 @@ public class ProductoResource {
     @Operation(summary = "Actualizar producto")
     public Response update(@PathParam("id") String id, ProductoDTO dto) {
         ProductoDTO existing = productoService.findById(id);
+        System.out.println("================= DATA ENTRANTE (DTO) =================");
+        System.out.println("Nombre: " + dto.nombre);
+        System.out.println("Tienda ID: " + dto.tiendaId);
+        System.out.println("Stock Disponible: " + dto.stockDisponible);
+        System.out.println("Disponible (Boolean): " + dto.disponible);
+        System.out.println("Atributos (Map): " + dto.atributos);
+        System.out.println("=======================================================");
         if (existing == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -72,6 +86,8 @@ public class ProductoResource {
                 .entity("No tienes acceso a este producto")
                 .build();
         }
+        System.out.println("=======================================================");
+        System.out.println("SE LLEGA?");
         
         ProductoDTO updated = productoService.update(id, dto);
         return Response.ok(updated).build();
