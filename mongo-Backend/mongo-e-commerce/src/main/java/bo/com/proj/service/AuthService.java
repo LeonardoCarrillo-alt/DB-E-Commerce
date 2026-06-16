@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
+import jakarta.ws.rs.WebApplicationException;
 @ApplicationScoped
 public class AuthService {
     
@@ -118,11 +118,22 @@ public class AuthService {
         createRequest.nombre = request.nombre;
         createRequest.activo = true;
 
+log.info("email={}", createRequest.email);
+log.info("passwordHash={}", createRequest.passwordHash);
+        log.info("passwordHash = {}", createRequest.passwordHash);
         try {
             postgresClient.createUsuario(createRequest);
+        } catch (WebApplicationException e) {
+            // 🚨 ESTO INTERCEPTA EL CUERPO EXACTO DE ERROR ENVIADO POR POSTGRES
+            String errorBody = e.getResponse().readEntity(String.class);
+            log.error("--- DETALLE DEL ERROR DESDE POSTGRESQL (8082) ---");
+            log.error("Status: {}", e.getResponse().getStatus());
+            log.error("Cuerpo del error: {}", errorBody);
+            log.error("-------------------------------------------------");
+            throw e; // Volvemos a lanzar para mantener el comportamiento
         } catch (Exception e) {
-            log.error("Error al registrar usuario en PostgreSQL: {}", e.getMessage());
-            throw new ValidationException("No se pudo registrar el usuario");
+            log.error("Error genérico en el registro: ", e);
+            throw e;
         }
 
         LoginRequestDTO loginRequest = new LoginRequestDTO();
@@ -130,7 +141,6 @@ public class AuthService {
         loginRequest.password = request.password;
         return login(loginRequest);
     }
-    
     /**
      * Refresh token
      */
