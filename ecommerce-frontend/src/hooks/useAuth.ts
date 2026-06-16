@@ -1,14 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { authApi } from '../api/authApi'
+import { authService } from '../services/authService'
 import { useAuth as useAuthState } from '../store/hooks/useAuth'
 
 export function useAuth() {
   const authState = useAuthState()
 
-  // GET /auth/me para datos frescos del servidor
   const profileQuery = useQuery({
     queryKey: ['me'],
-    queryFn: () => authApi.getMe().then((res) => res.data),
+    queryFn: () => authService.getMe(),
     enabled: authState.isAuthenticated,
     staleTime: 1000 * 60 * 10,
   })

@@ -45,11 +45,22 @@ export default function AdminProducts() {
 
   const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string, unknown>) => {
     try {
+      if (!user?.tiendaId) throw new Error('Usuario sin tienda asignada')
+
       if (editingProduct) {
-        await updateProduct.mutateAsync({ id: editingProduct._id, data: { ...values, ...extraAttrs } as Partial<Product> })
+        await updateProduct.mutateAsync({
+          id: editingProduct._id,
+          values,
+          extraAttrs,
+          tiendaId: user.tiendaId,
+        })
         setSnackbar({ open: true, message: 'Producto actualizado correctamente', severity: 'success' })
       } else {
-        await createProduct.mutateAsync({ ...values, ...extraAttrs, activo: true, tienda_id: user?.tiendaId ?? "" } as unknown as Omit<Product, "_id">)
+        await createProduct.mutateAsync({
+          values,
+          extraAttrs,
+          tiendaId: user.tiendaId,
+        })
         setSnackbar({ open: true, message: 'Producto creado correctamente', severity: 'success' })
       }
       setDialogOpen(false)

@@ -5,20 +5,22 @@ import CategoryChart from '../../components/dashboard/CategoryChart'
 import OrderTable from '../../components/orders/OrderTable'
 import { useAllOrders } from '../../hooks/useOrders'
 
-const mockSalesData = [
-  { fecha: 'Ene', ventas: 12400, pedidos: 64 },
-  { fecha: 'Feb', ventas: 9800, pedidos: 51 },
-  { fecha: 'Mar', ventas: 15600, pedidos: 83 },
-  { fecha: 'Abr', ventas: 14200, pedidos: 74 },
-  { fecha: 'May', ventas: 19800, pedidos: 102 },
-  { fecha: 'Jun', ventas: 17500, pedidos: 91 },
-]
-
 export default function Dashboard() {
   const { data: orders } = useAllOrders()
 
-  const totalVentas = orders?.reduce((sum, o) => sum + o.total, 0) ?? 89300
-  const totalPedidos = orders?.length ?? 465
+  const totalVentas = orders?.reduce((sum, o) => sum + o.total, 0) ?? 0
+  const totalPedidos = orders?.length ?? 0
+  const ventasPorMes = orders?.reduce<Record<string, { ventas: number; pedidos: number }>>((acc, order) => {
+    const fecha = new Date(order.createdAt).toLocaleString('es-VE', { month: 'short' })
+    if (!acc[fecha]) acc[fecha] = { ventas: 0, pedidos: 0 }
+    acc[fecha].ventas += order.total
+    acc[fecha].pedidos += 1
+    return acc
+  }, {})
+
+  const salesData = Object.entries(ventasPorMes ?? {})
+    .slice(0, 6)
+    .map(([fecha, values]) => ({ fecha, ...values }))
 
   return (
     <Box>
@@ -33,7 +35,7 @@ export default function Dashboard() {
 
       <Grid container spacing={3} sx={{ mt: 1 }}>
         <Grid item xs={12} lg={8}>
-          <SalesChart data={mockSalesData} />
+          <SalesChart data={salesData.length ? salesData : [{ fecha: 'Sin datos', ventas: 0, pedidos: 0 }]} />
         </Grid>
         <Grid item xs={12} lg={4}>
           <CategoryChart />
