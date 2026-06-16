@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
-import { authApi, type LoginPayload } from '../../api/authApi'
+import { authService } from '../../services/authService'
+import type { LoginPayload } from '../../api/authApi'
 import { STORAGE_KEYS } from '../../utils/constants'
-import { clearSession, getSessionId, clearSessionId } from '../../utils/helpers'
-import { cartApi } from '../../api/cartApi'
+import { clearSession } from '../../utils/helpers'
 import type { RegisterPayload } from '../../api/authApi'
 
 interface AuthUser {
@@ -39,22 +39,7 @@ export const login = createAsyncThunk(
   'auth/login',
   async (payload: LoginPayload, { rejectWithValue }) => {
     try {
-      const { data } = await authApi.login(payload)
-      localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user))
-
-      // Migrar carrito de invitado al usuario registrado
-      const sessionId = getSessionId()
-      if (sessionId) {
-        try {
-          await cartApi.migrarCarrito(sessionId)
-          clearSessionId()
-        } catch {
-          console.warn('No se pudo migrar el carrito de invitado')
-        }
-      }
-
+      const data = await authService.login(payload)
       return data
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -67,10 +52,7 @@ export const register = createAsyncThunk(
   'auth/register',
   async (payload: RegisterPayload, { rejectWithValue }) => {
     try {
-      const { data } = await authApi.register(payload)
-      localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
-      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user))
+      const data = await authService.register(payload)
       return data
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }

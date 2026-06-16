@@ -25,7 +25,7 @@ const orderSlice = createSlice({
     setSelectedOrder(state, action: PayloadAction<Order | null>) {
       state.selectedOrder = action.payload
     },
-    updateOrderStatus(state, action: PayloadAction<{ id: number; estado: Order['estado'] }>) {
+    updateOrderStatus(state, action: PayloadAction<{ id: string; estado: Order['estado'] }>) {
       const order = state.items.find((o) => o.id === action.payload.id)
       if (order) order.estado = action.payload.estado
     },

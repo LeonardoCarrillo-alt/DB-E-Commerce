@@ -4,6 +4,7 @@ import {
   Button, Avatar, Box, Divider, Alert, Tabs, Tab,
 } from '@mui/material'
 import { useAuth } from '../../store/hooks/useAuth'
+import { useUpdateUserProfile, useChangePassword } from '../../hooks/useUsers'
 import { getInitials, stringToColor } from '../../utils/helpers'
 
 export default function Profile() {
@@ -23,17 +24,41 @@ export default function Profile() {
     confirmPassword: '',
   })
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const updateProfile = useUpdateUserProfile()
+  const changePassword = useChangePassword()
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+    if (!user?.id) return
+
+    try {
+      await updateProfile.mutateAsync({ id: user.id, data: { nombre: form.nombre, email: form.email, telefono: form.telefono } })
+      setSaved(true)
+    } catch {
+      setSaved(false)
+    }
   }
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaved(true)
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    setTimeout(() => setSaved(false), 3000)
+    if (!user?.id) return
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setSaved(false)
+      return
+    }
+
+    try {
+      await changePassword.mutateAsync({
+        id: user.id,
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      })
+      setSaved(true)
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch {
+      setSaved(false)
+    }
   }
 
   return (

@@ -10,7 +10,7 @@ import type { OrderStatus } from '../../utils/constants'
 
 interface Props {
   orders: Order[]
-  onStatusChange?: (id: number, estado: OrderStatus) => void
+  onStatusChange?: (id: string, estado: OrderStatus) => void
 }
 
 export default function OrderTable({ orders, onStatusChange }: Props) {

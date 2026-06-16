@@ -6,7 +6,7 @@ import {
 } from '@mui/material'
 import CheckoutForm from '../../components/forms/CheckoutForm'
 import CartSummary from '../../components/cart/CartSummary'
-import { useCart } from '../../store/hooks/useAuth'
+import { useCart, useAuth } from '../../store/hooks/useAuth'
 import { useAppDispatch } from '../../store/hooks/useAuth'
 import { clearCart } from '../../store/slices/cartSlice'
 import { useCreateOrder } from '../../hooks/useOrders'
@@ -18,6 +18,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { items } = useCart()
+  const { user } = useAuth()
   const createOrder = useCreateOrder()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -32,6 +33,7 @@ export default function Checkout() {
     try {
       setActiveStep(2)
 
+
       // Paso 1: Sincronizar carrito local (Redux) al backend
       await cartService.syncLocalCart(items)
 
@@ -40,6 +42,10 @@ export default function Checkout() {
 
       // Paso 3: Crear orden con el reserva_id y carrito.id retornados
       await orderService.create(response.reserva_id, response.carrito.id, data)
+      
+      // Paso 4: Crear orden con el reservaId y carritoId retornados
+      if (!user?.id) throw new Error('Usuario no autenticado')
+      await orderService.create(reservaId, carritoId, data, user.id)
 
       // Paso 3: Limpiar carrito local y redirigir
       setSuccess(true)
