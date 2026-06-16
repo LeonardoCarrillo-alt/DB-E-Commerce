@@ -14,13 +14,13 @@ export const cartService = {
   },
 
   async addItem(productoId: string, cantidad: number, variante?: string) {
-    const { data } = await cartApi.addItem({ productoId: productoId, cantidad, variante })
+    const { data } = await cartApi.addItem({ producto_id: productoId, cantidad, variante })
     return data
   },
 
   async updateItem(productoId: string, cantidad: number, variante?: string) {
     // Si cantidad ≤ 0, el backend elimina el item automáticamente
-    const { data } = await cartApi.updateItem({ productoId: productoId, cantidad, variante })
+    const { data } = await cartApi.updateItem({ producto_id: productoId, cantidad, variante })
     return data
   },
 
@@ -64,15 +64,35 @@ export const cartService = {
    * Debe llamarse antes de procesarCheckout.
    */
   async syncLocalCart(items: CartItem[]): Promise<void> {
+    if (items.length === 0) return
+
     // 1. Limpiar carrito en backend (por si tenía items de sesiones anteriores)
     await cartApi.clearCart()
 
     // 2. Agregar cada item local al backend
+    const errores: string[] = []
     for (const item of items) {
-      await cartApi.addItem({
-        productoId: item.productId,
-        cantidad: item.cantidad,
-      })
+      const productoId = item.productId
+      if (!productoId) {
+        const msg = `[cartService] item saltado — productId inválido: ${JSON.stringify(item)}`
+        console.warn(msg)
+        errores.push(msg)
+        continue
+      }
+      try {
+        await cartApi.addItem({
+          producto_id: productoId,
+          cantidad: item.cantidad,
+        })
+      } catch (err) {
+        const msg = `[cartService] error al agregar item ${productoId}: ${(err as Error)?.message}`
+        console.error(msg)
+        errores.push(msg)
+      }
+    }
+
+    if (errores.length > 0) {
+      console.warn('[cartService] syncLocalCart completado con errores:', errores)
     }
   },
 

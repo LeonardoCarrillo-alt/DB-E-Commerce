@@ -7,6 +7,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import { Link } from 'react-router-dom'
 import { useAppDispatch } from '../../store/hooks/useAuth'
 import { addItem } from '../../store/slices/cartSlice'
+import { cartService } from '../../services/cartService'
 import { formatCurrency } from '../../utils/formatCurrency'
 import type { Product } from '../../api/productApi'
 import { truncateText } from '../../utils/helpers'
@@ -29,6 +30,7 @@ export default function ProductCard({ product }: Props) {
         imagen: product.imagenes?.[0],
       })
     )
+    cartService.addItem(product._id, 1).catch(console.error)
   }
 
   return (

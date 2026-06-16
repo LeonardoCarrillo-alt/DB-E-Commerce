@@ -33,6 +33,7 @@ export default function Checkout() {
     try {
       setActiveStep(2)
 
+
       // Paso 1: Sincronizar carrito local (Redux) al backend
       await cartService.syncLocalCart(items)
 
@@ -41,6 +42,10 @@ export default function Checkout() {
 
       // Paso 3: Crear orden con el reserva_id y carrito.id retornados
       await orderService.create(response.reserva_id, response.carrito.id, data)
+      
+      // Paso 4: Crear orden con el reservaId y carritoId retornados
+      if (!user?.id) throw new Error('Usuario no autenticado')
+      await orderService.create(reservaId, carritoId, data, user.id)
 
       // Paso 3: Limpiar carrito local y redirigir
       setSuccess(true)
