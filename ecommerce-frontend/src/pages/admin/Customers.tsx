@@ -21,11 +21,13 @@ export default function Customers() {
     queryFn: () => userApi.getAll().then((res) => res.data),
   })
 
-  const filtered = users?.filter(
-    (u) =>
-      u.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  ) ?? []
+  const filtered = users
+    ?.filter((u) => u.rol === 'CLIENTE')
+    .filter(
+      (u) =>
+        u.nombre.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    ) ?? []
 
   if (isLoading) return <Loading />
 
@@ -78,19 +80,19 @@ export default function Customers() {
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Chip
-                      label={user.rol}
-                      size="small"
-                      color={user.rol === 'ADMIN' ? 'primary' : 'default'}
-                      sx={{ fontWeight: 600 }}
-                    />
+                      <Chip
+                        label={user.rol}
+                        size="small"
+                        color={user.rol === 'SUPER_ADMIN' ? 'error' : user.rol === 'ADMIN_TIENDA' ? 'primary' : user.rol === 'VENDEDOR' ? 'warning' : 'default'}
+                        sx={{ fontWeight: 600 }}
+                      />
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                      {user.uuid.slice(0, 8)}...
+                      {user.id.slice(0, 8)}...
                     </Typography>
                   </TableCell>
-                  <TableCell>{formatDateShort(user.createdAt)}</TableCell>
+                  <TableCell>{user.fecha_creacion ? formatDateShort(user.fecha_creacion) : '-'}</TableCell>
                   <TableCell>
                     <Chip
                       label={user.activo ? 'Activo' : 'Inactivo'}

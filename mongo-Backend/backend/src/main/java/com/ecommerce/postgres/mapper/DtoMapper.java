@@ -7,6 +7,7 @@ import com.ecommerce.postgres.entity.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -106,6 +107,15 @@ public class DtoMapper {
         response.setTotal(pedido.getTotal());
         response.setEstado(pedido.getEstado());
         response.setFechaCreacion(pedido.getFechaCreacion());
+        if (pedido.getDetalles() != null) {
+            response.setItems(pedido.getDetalles().stream().map(d -> {
+                DetallePedidoResponse dr = new DetallePedidoResponse();
+                dr.setProductoId(d.getProductoId());
+                dr.setCantidad(d.getCantidad());
+                dr.setPrecioUnitario(d.getPrecioUnitario());
+                return dr;
+            }).toList());
+        }
         return response;
     }
 
@@ -116,6 +126,18 @@ public class DtoMapper {
         pedido.setUsuario(usuario);
         pedido.setTotal(request.getTotal());
         pedido.setEstado(request.getEstado());
+        if (request.getItems() != null) {
+            List<DetallePedido> detalles = new ArrayList<>();
+            for (var item : request.getItems()) {
+                DetallePedido detalle = new DetallePedido();
+                detalle.setProductoId(item.getProductoId());
+                detalle.setCantidad(item.getCantidad());
+                detalle.setPrecioUnitario(item.getPrecioUnitario());
+                detalle.setPedido(pedido);
+                detalles.add(detalle);
+            }
+            pedido.setDetalles(detalles);
+        }
         return pedido;
     }
 

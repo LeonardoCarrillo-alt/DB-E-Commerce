@@ -1,15 +1,14 @@
 import axiosInstance from './axios'
 
 export interface User {
-  id: number
-  uuid: string
+  id: string
   nombre: string
   email: string
-  telefono?: string
   rol: 'SUPER_ADMIN' | 'ADMIN_TIENDA' | 'VENDEDOR' | 'CLIENTE'
   activo: boolean
-  createdAt: string
-  updatedAt?: string
+  tienda_id?: string
+  permisos?: string[]
+  fecha_creacion?: string
 }
 
 export interface UpdateProfilePayload {

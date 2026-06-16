@@ -112,11 +112,12 @@ public class ProductoService {
         p.nombre = dto.nombre;
         p.descripcion = dto.descripcion;
         p.precio = dto.precio;
-        // Normalizar categoría
         p.categoria = dto.categoria != null ? normalizarCategoria(dto.categoria) : null;
         p.tiendaId = dto.tiendaId;
         p.atributos = dto.atributos;
         p.activo = dto.activo != null ? dto.activo : true;
+        p.stockDisponible = dto.stockDisponible;
+        p.disponible = dto.disponible;
         return p;
     }
 

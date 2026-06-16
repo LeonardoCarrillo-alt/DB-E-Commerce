@@ -10,7 +10,7 @@ import type { OrderStatus } from '../../utils/constants'
 
 interface Props {
   orders: Order[]
-  onStatusChange?: (id: number, estado: OrderStatus) => void
+  onStatusChange?: (id: string, estado: OrderStatus) => void
 }
 
 export default function OrderTable({ orders, onStatusChange }: Props) {
@@ -19,7 +19,7 @@ export default function OrderTable({ orders, onStatusChange }: Props) {
       <Table size="small">
         <TableHead sx={{ bgcolor: 'grey.50' }}>
           <TableRow>
-            {['#', 'Fecha', 'Cliente ID', 'Total', 'Pago', 'Estado'].map((h) => (
+            {['#', 'Fecha', 'Cliente ID', 'Total', 'Estado'].map((h) => (
               <TableCell key={h} sx={{ fontWeight: 700, fontSize: 12, textTransform: 'uppercase', color: 'text.secondary' }}>
                 {h}
               </TableCell>
@@ -29,7 +29,7 @@ export default function OrderTable({ orders, onStatusChange }: Props) {
         <TableBody>
           {orders.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+              <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                 <Typography color="text.secondary">No hay pedidos</Typography>
               </TableCell>
             </TableRow>
@@ -37,10 +37,9 @@ export default function OrderTable({ orders, onStatusChange }: Props) {
             orders.map((order) => (
               <TableRow key={order.id} hover>
                 <TableCell sx={{ fontWeight: 600 }}>#{order.id}</TableCell>
-                <TableCell>{formatDateShort(order.createdAt)}</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 11 }}>{order.clienteId}</TableCell>
+                <TableCell>{formatDateShort(order.fecha_creacion)}</TableCell>
+                <TableCell sx={{ fontFamily: 'monospace', fontSize: 11 }}>{order.usuarioId}</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{formatCurrency(order.total)}</TableCell>
-                <TableCell>{order.metodoPago}</TableCell>
                 <TableCell>
                   {onStatusChange ? (
                     <Select

@@ -47,7 +47,7 @@ export const orderService = {
   /**
    * Obtiene una orden específica por ID.
    */
-  async getById(id: number): Promise<Order> {
+   async getById(id: string): Promise<Order> {
     try {
       const { data } = await orderApi.getById(id)
       console.log(`✅ Orden ${id} obtenida:`, data.estado)
@@ -128,7 +128,7 @@ export const orderService = {
    * 
    * Estados válidos: PENDIENTE, PROCESANDO, ENVIADO, ENTREGADO, CANCELADO
    */
-  async updateStatus(id: number, estado: OrderStatus): Promise<Order> {
+  async updateStatus(id: string, estado: OrderStatus): Promise<Order> {
     if (!id || !estado) {
       throw new Error('id y estado son requeridos')
     }
@@ -148,7 +148,7 @@ export const orderService = {
    * Cancela una orden (si está en estado PENDIENTE).
    * Libera la reserva de stock.
    */
-  async cancel(id: number): Promise<Order> {
+  async cancel(id: string): Promise<Order> {
     try {
       console.log(`🚫 Cancelando orden ${id}`)
       return await this.updateStatus(id, 'CANCELADO' as OrderStatus)

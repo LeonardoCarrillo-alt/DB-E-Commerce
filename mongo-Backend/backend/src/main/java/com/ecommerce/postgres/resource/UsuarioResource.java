@@ -87,19 +87,11 @@ public class UsuarioResource {
     @APIResponse(responseCode = "201", description = "Usuario creado", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = UsuarioResponse.class)))
     @APIResponse(responseCode = "400", description = "Datos inválidos")
     public Response create(@Valid UsuarioRequest request) {
-
-    System.out.println("password_hash recibido = " + request.getPasswordHash());
-
-    var usuario = usuarioService.create(DtoMapper.toEntity(request));
-
-    return Response.created(URI.create("/usuarios/" + usuario.getId()))
-            .entity(DtoMapper.toResponse(usuario))
-            .build();
-}
-    // public Response create(@Valid @RequestBody(description = "Datos del usuario a crear", required = true, content = @Content(schema = @Schema(implementation = UsuarioRequest.class))) UsuarioRequest request) {
-    //     var usuario = usuarioService.create(DtoMapper.toEntity(request));
-    //     return Response.created(URI.create("/usuarios/" + usuario.getId())).entity(DtoMapper.toResponse(usuario)).build();
-    // }
+        var usuario = usuarioService.create(DtoMapper.toEntity(request));
+        return Response.created(URI.create("/usuarios/" + usuario.getId()))
+                .entity(DtoMapper.toResponse(usuario))
+                .build();
+    }
 
     @PUT
     @Path("{id}")

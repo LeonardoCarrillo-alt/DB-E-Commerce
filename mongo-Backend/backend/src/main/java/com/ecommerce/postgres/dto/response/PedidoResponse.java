@@ -2,6 +2,7 @@ package com.ecommerce.postgres.dto.response;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 public class PedidoResponse {
@@ -10,6 +11,7 @@ public class PedidoResponse {
     private BigDecimal total;
     private String estado;
     private Instant fechaCreacion;
+    private List<DetallePedidoResponse> items;
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -25,4 +27,7 @@ public class PedidoResponse {
 
     public Instant getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(Instant fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public List<DetallePedidoResponse> getItems() { return items; }
+    public void setItems(List<DetallePedidoResponse> items) { this.items = items; }
 }

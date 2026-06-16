@@ -17,13 +17,14 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Path("/orders")
+@Path("/pedidos")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Tag(name = "Órdenes", description = "Creación de pedidos desde el checkout")
+@Tag(name = "Órdenes", description = "Gestión de pedidos")
 public class OrderResource {
 
     @Inject
@@ -45,14 +46,19 @@ public class OrderResource {
     public Response create(@Valid CreateOrderRequestDTO request) {
         String usuarioId = securityContext.getUserPrincipal().getName();
 
-        // 1. Obtener carrito para conocer el total
         CarritoDTO carrito = carritoService.getCarritoByUsuario(usuarioId, false);
 
-        // 2. Crear pedido en PostgreSQL
         CrearPedidoRequestDTO pedidoReq = new CrearPedidoRequestDTO();
         pedidoReq.usuarioId = usuarioId;
         pedidoReq.total = carrito.total != null ? carrito.total : BigDecimal.ZERO;
         pedidoReq.estado = "PENDIENTE";
+        pedidoReq.items = carrito.items.stream().map(item -> {
+            CrearPedidoRequestDTO.ItemPedidoDTO dto = new CrearPedidoRequestDTO.ItemPedidoDTO();
+            dto.productoId = item.productoId;
+            dto.cantidad = item.cantidad;
+            dto.precioUnitario = item.precioUnitario;
+            return dto;
+        }).collect(Collectors.toList());
 
         PedidoResponseDTO pedido;
         try {
@@ -64,7 +70,6 @@ public class OrderResource {
             throw new RuntimeException("Error al crear el pedido en PostgreSQL: " + e.getMessage());
         }
 
-        // 3. Confirmar la reserva de stock
         ConfirmarCompraDTO confirmarDTO = new ConfirmarCompraDTO();
         confirmarDTO.reservaId = request.reservaId;
         confirmarDTO.orderId = pedido.id;
@@ -81,5 +86,46 @@ public class OrderResource {
             "estado", pedido.estado,
             "message", "Pedido creado exitosamente"
         )).build();
+    }
+
+    @GET
+    @RolesAllowed({"SUPER_ADMIN", "ADMIN_TIENDA"})
+    @Operation(summary = "Listar todos los pedidos")
+    public Response listAll() {
+        List<PedidoResponseDTO> pedidos = pedidoClient.listAll();
+        return Response.ok(pedidos).build();
+    }
+
+    @GET
+    @Path("{id}")
+    @RolesAllowed({"CLIENTE", "ADMIN_TIENDA", "SUPER_ADMIN"})
+    @Operation(summary = "Obtener pedido por ID")
+    public Response findById(@PathParam("id") String id) {
+        PedidoResponseDTO pedido = pedidoClient.findById(id);
+        return Response.ok(pedido).build();
+    }
+
+    @GET
+    @Path("usuario/me")
+    @RolesAllowed({"CLIENTE", "ADMIN_TIENDA", "SUPER_ADMIN"})
+    @Operation(summary = "Listar pedidos del usuario autenticado")
+    public Response findMyOrders() {
+        String usuarioId = securityContext.getUserPrincipal().getName();
+        List<PedidoResponseDTO> pedidos = pedidoClient.findByUsuarioId(usuarioId);
+        return Response.ok(pedidos).build();
+    }
+
+    @PUT
+    @Path("{id}/estado")
+    @RolesAllowed({"SUPER_ADMIN", "ADMIN_TIENDA"})
+    @Operation(summary = "Actualizar estado de un pedido")
+    public Response updateStatus(@PathParam("id") String id, PedidoUpdateStatusDTO dto) {
+        PedidoResponseDTO current = pedidoClient.findById(id);
+        CrearPedidoRequestDTO updateReq = new CrearPedidoRequestDTO();
+        updateReq.usuarioId = current.usuarioId;
+        updateReq.total = current.total;
+        updateReq.estado = dto.estado;
+        PedidoResponseDTO updated = pedidoClient.update(id, updateReq);
+        return Response.ok(updated).build();
     }
 }

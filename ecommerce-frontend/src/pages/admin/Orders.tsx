@@ -20,7 +20,7 @@ export default function AdminOrders() {
   const updateStatus = useUpdateOrderStatus()
   const [snackbar, setSnackbar] = useState(false)
 
-  const handleStatusChange = async (id: number, estado: OrderStatus) => {
+  const handleStatusChange = async (id: string, estado: OrderStatus) => {
     await updateStatus.mutateAsync({ id, estado })
     setSnackbar(true)
   }
