@@ -56,12 +56,12 @@ export default function ProductForm({ initialData, onSubmit, loading = false }: 
           nombre: initialData.nombre,
           descripcion: initialData.descripcion,
           precio: initialData.precio,
-          stock: initialData.stock,
+          stock: initialData.stock ?? (initialData as any).stockDisponible ?? 0,
           categoria: initialData.categoria,
-          
+          marca: initialData.marca || '', // 🛠️ Añadido para soportar el input de marca
           etiquetas: initialData.etiquetas?.join(', ') ?? '',
         }
-      : { precio: 0, stock: 0, etiquetas: '' },
+      : { precio: 0, stock: 0, etiquetas: '', marca: '' },
   })
 
   const categoria = watch('categoria')
@@ -74,10 +74,14 @@ export default function ProductForm({ initialData, onSubmit, loading = false }: 
   useEffect(() => {
     if (initialData) {
       const attrs: Record<string, string> = {}
+      
+      // 🛠️ CAPA DE PROTECCIÓN: Si es nulo o no existe, usamos un objeto vacío
+      const atributosDb = (initialData.atributos as Record<string, unknown>) || {}
+
       Object.entries(DYNAMIC_FIELDS).forEach(([, fields]) => {
         fields.forEach((f) => {
-          const val = (initialData.atributos as Record<string, unknown>)[f.key]
-          if (val !== undefined) {
+          const val = atributosDb[f.key] // 🌟 Ahora lee de forma segura sin colapsar
+          if (val !== undefined && val !== null) {
             attrs[f.key] = Array.isArray(val) ? val.join(', ') : String(val)
           }
         })
@@ -163,7 +167,13 @@ export default function ProductForm({ initialData, onSubmit, loading = false }: 
           />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <TextField fullWidth label="Marca" {...register('marca')} error={!!errors.marca} helperText={errors.marca?.message} />
+          <TextField 
+            fullWidth 
+            label="Marca" 
+            {...register('marca')} 
+            error={!!errors.marca} 
+            helperText={errors.marca?.message} 
+          />
         </Grid>
 
         <Grid item xs={12}>

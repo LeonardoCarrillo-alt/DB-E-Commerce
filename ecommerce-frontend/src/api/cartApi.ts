@@ -11,30 +11,40 @@ export interface CartItemAPI {
 }
 
 export interface CartItemResponse {
-  productoId: string
+  productId: string  // ← Backend retorna con I mayúscula (@JsonProperty)
   nombre: string
   precio: number
   cantidad: number
   variante?: string
   subtotal: number
   imagen?: string
+  categoria?: string
+  tiendaId?: string
+  fechaAgregado?: string
 }
 
 export interface CartResponse {
+  id?: string
   usuarioId?: string
+  usuarioEmail?: string
   sessionId?: string
   items: CartItemResponse[]
   subtotal: number
   descuento?: number
   total: number
   codigoPromocion?: string
+  invitado?: boolean
+  estado?: string
+  fechaCreacion?: string
+  fechaActualizacion?: string
 }
 
 export interface CheckoutResponse {
-  reserva_id: string
-  carrito: { id: string }
+  reservaId: string
+  carritoId: string
   total: number
-  monto_descuento?: number
+  descuento?: number
+  items?: CartItemResponse[]
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -55,16 +65,18 @@ export const cartApi = {
     axiosInstance.put<CartResponse>('/carrito/items', item),
 
   /** DELETE /carrito/items/{productoId} */
-  removeItem: (productoId: string) =>
-    axiosInstance.delete<CartResponse>(`/carrito/items/${productoId}`),
+  removeItem: (productoId: string, variante?: string) =>
+    axiosInstance.delete<CartResponse>(
+      `/carrito/items/${productoId}${variante ? `?variante=${variante}` : ''}`
+    ),
 
   /** DELETE /carrito — vacía completamente el carrito */
   clearCart: () =>
     axiosInstance.delete<CartResponse>('/carrito'),
 
-  /** POST /carrito/promocion — aplica código de promoción */
+  /** POST /carrito/promocion — aplica código de promoción (camelCase en DTO) */
   applyPromocion: (codigo: string) =>
-    axiosInstance.post<CartResponse>('/carrito/promocion', { codigo_promocion: codigo }),
+    axiosInstance.post<CartResponse>('/carrito/promocion', { codigoPromocion: codigo }),
 
   /** DELETE /carrito/promocion — quita el código de promoción */
   removePromocion: () =>

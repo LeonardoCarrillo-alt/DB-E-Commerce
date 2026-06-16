@@ -7,36 +7,40 @@ export interface ProductAtributos {
   talla?: string
   color?: string
   material?: string
+  marca?: string
   voltaje?: string
   ram?: string
   dimensiones?: string
   capacidad?: string
   estilo?: string
+  peso?: string
   [key: string]: unknown
 }
 
 export interface Product {
-  _id: string
+  _id?: string
   id?: string
   nombre: string
   descripcion: string
   precio: number
   categoria: string
-  tienda_id: string
-  atributos: ProductAtributos
-  activo: boolean
+  tiendaId: string  // ← camelCase consistente
+  atributos?: ProductAtributos
+  activo?: boolean
   imagenes?: string[]
   etiquetas?: string[]
   variantes?: string[]
-  marcas?: string[]
   stock?: number
 }
 
 export interface ProductsResponse {
-  products: Product[]
+  items?: Product[]
+  products?: Product[]
   total: number
-  page: number
-  pages: number
+  pagina?: number
+  page?: number
+  pages?: number
+  totalPaginas?: number
 }
 
 // Filtros para GET /productos (query params simples)
@@ -63,34 +67,39 @@ export interface AdvancedSearchBody {
   categoria?: string
   precioMin?: number
   precioMax?: number
+  tiendaId?: string
   atributos?: Record<string, unknown>
   ordenarPor?: string
   ordenDireccion?: 'asc' | 'desc'
   pagina?: number
   limite?: number
+  soloDisponibles?: boolean
+  soloConDescuento?: boolean
+}
+
+export interface SugerenciaDTO {
+  texto: string
+  tipo: string
+  url_redireccion?: string
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const productApi = {
   /** GET /productos — lista todos los productos activos */
-  // getAll: (filters: ProductFilters = {}) =>
-  //   axiosInstance.get<ProductsResponse>(`/productos${toQueryString(filters as Record<string, unknown>)}`),
+  getAll: (filters: ProductFilters = {}) =>
+    axiosInstance.get<Product[]>(`/productos${toQueryString(filters as Record<string, unknown>)}`),
 
-  /** GET /productos — Si devuelve un array directo, típalo así: */
-    getAll: (filters: ProductFilters = {}) =>
- 
-  axiosInstance.get<Product[]>(`/productos${toQueryString(filters as Record<string, unknown>)}`),
   /** GET /productos/{id} */
   getById: (id: string) =>
     axiosInstance.get<Product>(`/productos/${id}`),
 
   /** POST /productos/buscar — búsqueda simple con filtros dinámicos */
   buscar: (body: ProductSearchBody) =>
-    axiosInstance.post<ProductsResponse>('/productos/buscar', body),
+    axiosInstance.post<Product[]>('/productos/buscar', body),
 
   /** POST /productos — crear producto (ADMIN_TIENDA, SUPER_ADMIN) */
-  create: (data: Omit<Product, '_id'>) =>
+  create: (data: Omit<Product, '_id' | 'id'>) =>
     axiosInstance.post<Product>('/productos', data),
 
   /** PUT /productos/{id} — actualizar producto */
@@ -112,25 +121,32 @@ export const busquedaApi = {
   /** GET /busqueda/productos?q=&categoria=&... */
   busquedaSimple: (params: {
     q?: string
+    query?: string
     categoria?: string
-    precio_min?: number
-    precio_max?: number
+    precioMin?: number
+    precioMax?: number
     pagina?: number
     limite?: number
-    ordenar?: string
+    ordenarPor?: string
     dir?: 'asc' | 'desc'
   }) =>
     axiosInstance.get<ProductsResponse>(`/busqueda/productos${toQueryString(params as Record<string, unknown>)}`),
 
   /** GET /busqueda/autocompletar?q= (mínimo 2 caracteres) */
   autocompletar: (q: string) =>
-    axiosInstance.get<string[]>(`/busqueda/autocompletar?q=${encodeURIComponent(q)}`),
+    axiosInstance.get<SugerenciaDTO[]>(`/busqueda/autocompletar?q=${encodeURIComponent(q)}`),
 
-  /** GET /busqueda/destacados?categoria= */
-  destacados: (categoria?: string) =>
-    axiosInstance.get<Product[]>(`/busqueda/destacados${categoria ? `?categoria=${categoria}` : ''}`),
+  /** GET /busqueda/destacados?categoria=&limite= */
+  destacados: (categoria?: string, limite: number = 10) =>
+    axiosInstance.get<Product[]>(
+      `/busqueda/destacados${
+        categoria || limite !== 10
+          ? `?${[categoria ? `categoria=${categoria}` : '', `limite=${limite}`].filter(Boolean).join('&')}`
+          : ''
+      }`
+    ),
 
-  /** GET /busqueda/relacionados/{productoId} */
-  relacionados: (productoId: string) =>
-    axiosInstance.get<Product[]>(`/busqueda/relacionados/${productoId}`),
+  /** GET /busqueda/relacionados/{productoId}?limite= */
+  relacionados: (productoId: string, limite: number = 6) =>
+    axiosInstance.get<Product[]>(`/busqueda/relacionados/${productoId}?limite=${limite}`),
 }

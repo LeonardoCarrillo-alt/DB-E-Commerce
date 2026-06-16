@@ -1,4 +1,4 @@
-// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+// src/hooks/useProducts.ts
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { productApi, busquedaApi, type ProductFilters, type Product, type ProductSearchBody, type AdvancedSearchBody, type ProductsResponse } from '../api/productApi'
 
@@ -11,22 +11,15 @@ export function useProducts(filters: ProductFilters = {}) {
   })
 }
 
-
-// export function useProduct(id: string | undefined) {
-//   return useQuery<Product>({
-//     queryKey: ['product', id],
-//     queryFn: () => productApi.getById(id as string).then((res) => res.data),
-//     enabled: !!id,
-//   })
-// }
 export function useProduct(id: string | undefined) {
   return useQuery<Product>({
     queryKey: ['product', id],
     queryFn: () => productApi.getById(id as string).then((res) => res.data),
-    // 🚨 CAMBIO AQUÍ: Bloquea si id es undefined (valor) o si es el string "undefined"
+    // 🚨 EVITA: Llamadas innecesarias si el id no existe o es el string "undefined"
     enabled: !!id && id !== 'undefined', 
   })
 }
+
 // ─── Búsqueda POST /productos/buscar ─────────────────────────────────────────
 
 export function useProductSearch(body: ProductSearchBody, enabled = true) {
@@ -71,22 +64,15 @@ export function useDestacados(categoria?: string) {
 
 // ─── Relacionados ─────────────────────────────────────────────────────────────
 
-// export function useRelacionados(productoId: string | undefined) {
-//   return useQuery<Product[]>({
-//     queryKey: ['relacionados', productoId],
-//     queryFn: () => busquedaApi.relacionados(productoId as string).then((res) => res.data),
-//     enabled: !!productoId,
-//   })
-// }
-
 export function useRelacionados(productoId: string | undefined) {
   return useQuery<Product[]>({
     queryKey: ['relacionados', productoId],
     queryFn: () => busquedaApi.relacionados(productoId as string).then((res) => res.data),
-    // 🚨 CAMBIO AQUÍ: Bloquea si productoId es undefined (valor) o si es el string "undefined"
+    // 🚨 EVITA: Llamadas si productoId es inválido
     enabled: !!productoId && productoId !== 'undefined',
   })
 }
+
 // ─── Mutaciones CRUD ─────────────────────────────────────────────────────────
 
 export function useCreateProduct() {
@@ -100,8 +86,13 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Product> }) =>
-      productApi.update(id, data).then((res) => res.data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Product> }) => {
+      // 🚨 CRÍTICO: Bloqueo en la raíz de la mutación por si se cuela un ID corrupto
+      if (!id || id === 'undefined') {
+        return Promise.reject(new Error('❌ El ID proporcionado para actualizar no es válido.'))
+      }
+      return productApi.update(id, data).then((res) => res.data)
+    },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       queryClient.invalidateQueries({ queryKey: ['product', id] })
@@ -112,7 +103,13 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => productApi.delete(id),
+    mutationFn: (id: string) => {
+      // 🚨 CRÍTICO: Bloqueo preventivo antes de disparar el DELETE en el servidor
+      if (!id || id === 'undefined') {
+        return Promise.reject(new Error('❌ El ID proporcionado para eliminar no es válido.'))
+      }
+      return productApi.delete(id)
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
   })
 }

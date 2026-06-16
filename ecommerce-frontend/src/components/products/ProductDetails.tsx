@@ -17,7 +17,7 @@ interface Props {
   product: Product
 }
 
-// Atributos dinámicos relevantes a mostrar por categoría (esquema BSON flexible)
+// Mapeo de atributos dinámicos (esquema BSON flexible)
 const DYNAMIC_ATTR_LABELS: Record<string, string> = {
   voltaje: 'Voltaje',
   ram: 'Memoria RAM',
@@ -26,6 +26,8 @@ const DYNAMIC_ATTR_LABELS: Record<string, string> = {
   dimensiones: 'Dimensiones',
   estilo: 'Estilo',
   capacidad: 'Capacidad',
+  color: 'Color',
+  peso: 'Peso',
 }
 
 export default function ProductDetails({ product }: Props) {
@@ -33,40 +35,91 @@ export default function ProductDetails({ product }: Props) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [cantidad, setCantidad] = useState(1)
 
-  const images = product.imagenes?.length ? product.imagenes : ['https://via.placeholder.com/600x500?text=Sin+imagen']
+  const images = product.imagenes?.length
+    ? product.imagenes
+    : ['https://via.placeholder.com/600x500?text=Sin+imagen']
 
-  const handleAddToCart = () => {
-    dispatch(addItem({
-      productId: product._id,
-      nombre: product.nombre,
-      precio: product.precio,
-      cantidad,
-      imagen: images[0],
-    }))
+  const agotado = (product.stock ?? 0) === 0
+
+  /**
+   * Agregar al carrito.
+   * 
+   * Mapeo de IDs:
+   * - MongoDB retorna "_id"
+   * - Redux usa "productoId" (normalizado)
+   * - Backend espera "productoId" en DTO
+   */
+  const handleAddToCart = async () => {
+    // 🔴 CRÍTICO: Extraer el ID real del documento MongoDB
+    const mongoId = product._id || product.id
+
+    if (!mongoId) {
+      console.error('❌ ProductDetails: producto sin ID válido:', product)
+      return
+    }
+
+    console.log('=== ProductDetails: handleAddToCart ===')
+    console.log('MongoDB _id:', mongoId)
+    console.log('Cantidad:', cantidad)
+
+    // 1️⃣ Despachar a Redux con estructura normalizada
+    dispatch(
+      addItem({
+        productoId: mongoId, // ← Redux usa "productoId"
+        nombre: product.nombre,
+        precio: product.precio,
+        cantidad: cantidad,
+        imagen: images[0],
+      })
+    )
+
+    // 2️⃣ Abrir carrito (animar el panel)
     dispatch(openCart())
-    cartService.addItem(product._id, cantidad).catch(console.error)
+
+    // 3️⃣ Sincronizar con backend
+    try {
+      const response = await cartService.addItem(mongoId, cantidad)
+      console.log('✅ Backend sincronizado. Items:', response.items?.length)
+    } catch (err) {
+      console.error('❌ Error al sincronizar con backend:', err)
+      // Redux ya fue actualizado, así que el carrito local refleja el cambio
+    }
   }
 
-  // Extrae atributos dinámicos presentes en el documento (no estándar)
+  // Extrae atributos dinámicos del documento BSON
   const dynamicAttrs = Object.entries(DYNAMIC_ATTR_LABELS)
-    .filter(([key]) => (product.atributos as Record<string, unknown>)[key] !== undefined)
-    .map(([key, label]) => ({
-      label,
-      value: Array.isArray((product.atributos as Record<string, unknown>)[key]) ? ((product.atributos as Record<string, unknown>)[key] as string[]).join(', ') : String((product.atributos as Record<string, unknown>)[key]),
-    }))
+    .filter(([key]) => (product.atributos as Record<string, unknown>)?.[key] !== undefined)
+    .map(([key, label]) => {
+      const value = (product.atributos as Record<string, unknown>)?.[key]
+      return {
+        label,
+        value: Array.isArray(value)
+          ? (value as string[]).join(', ')
+          : String(value),
+      }
+    })
 
   return (
     <Grid container spacing={4}>
-      {/* Galería de imágenes */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* GALERÍA DE IMÁGENES (Izquierda) */}
+      {/* ════════════════════════════════════════════════════════════ */}
       <Grid item xs={12} md={6}>
-        <Card sx={{ mb: 1.5, '&:hover': { transform: 'none' } }}>
+        {/* Imagen principal */}
+        <Card sx={{ mb: 1.5, backgroundColor: '#f5f5f5' }}>
           <CardMedia
             component="img"
             image={images[selectedImage]}
             alt={product.nombre}
-            sx={{ height: { xs: 300, md: 460 }, objectFit: 'cover' }}
+            sx={{
+              height: { xs: 300, md: 460 },
+              objectFit: 'cover',
+              transition: 'transform 0.3s ease',
+            }}
           />
         </Card>
+
+        {/* Miniaturas */}
         {images.length > 1 && (
           <Stack direction="row" spacing={1}>
             {images.map((img, idx) => (
@@ -75,12 +128,20 @@ export default function ProductDetails({ product }: Props) {
                 component="img"
                 src={img}
                 onClick={() => setSelectedImage(idx)}
+                alt={`Imagen ${idx + 1}`}
                 sx={{
-                  width: 70, height: 70, objectFit: 'cover', borderRadius: 1.5,
-                  cursor: 'pointer', border: '2px solid',
+                  width: 70,
+                  height: 70,
+                  objectFit: 'cover',
+                  borderRadius: 1.5,
+                  cursor: 'pointer',
+                  border: '2px solid',
                   borderColor: selectedImage === idx ? 'primary.main' : 'transparent',
                   opacity: selectedImage === idx ? 1 : 0.6,
-                  transition: 'all 0.15s',
+                  transition: 'all 0.15s ease',
+                  '&:hover': {
+                    opacity: 0.9,
+                  },
                 }}
               />
             ))}
@@ -88,35 +149,69 @@ export default function ProductDetails({ product }: Props) {
         )}
       </Grid>
 
-      {/* Información del producto */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* INFORMACIÓN DEL PRODUCTO (Derecha) */}
+      {/* ════════════════════════════════════════════════════════════ */}
       <Grid item xs={12} md={6}>
-        <Chip label={product.categoria} color="primary" variant="outlined" size="small" sx={{ mb: 1.5 }} />
+        {/* Categoría */}
+        <Chip
+          label={product.categoria || 'Sin categoría'}
+          color="primary"
+          variant="outlined"
+          size="small"
+          sx={{ mb: 1.5 }}
+        />
+
+        {/* Nombre */}
         <Typography variant="h4" fontWeight={800} gutterBottom>
           {product.nombre}
         </Typography>
 
-        {product.atributos?.material && (
+        {/* Marca/Material */}
+        {(product.atributos?.material || product.atributos?.marca) && (
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Marca: <strong>{product.atributos?.material}</strong>
+            Marca:{' '}
+            <strong>
+              {product.atributos?.material || product.atributos?.marca}
+            </strong>
           </Typography>
         )}
 
-        <Typography variant="h3" color="primary.main" fontWeight={900} sx={{ my: 2 }}>
+        {/* Precio */}
+        <Typography
+          variant="h3"
+          color="primary.main"
+          fontWeight={900}
+          sx={{ my: 2 }}
+        >
           {formatCurrency(product.precio)}
         </Typography>
 
+        {/* Stock */}
         <Chip
-          label={((product.stock ?? 0) ?? 0) > 0 ? `${(product.stock ?? 0)} disponibles` : 'Agotado'}
-          color={((product.stock ?? 0) ?? 0) > 0 ? 'success' : 'error'}
+          label={
+            agotado
+              ? 'Agotado'
+              : `${product.stock ?? 0} disponible(s)`
+          }
+          color={agotado ? 'error' : 'success'}
           size="small"
-          sx={{ mb: 3, fontWeight: 600 }}
+          sx={{ mb: 3, fontWeight: 700 }}
         />
 
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 3, lineHeight: 1.7 }}>
+        {/* Descripción */}
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{
+            mb: 3,
+            lineHeight: 1.8,
+          }}
+        >
           {product.descripcion}
         </Typography>
 
-        {/* Atributos dinámicos (esquema BSON) */}
+        {/* ──── Especificaciones dinámicas (BSON) ──── */}
         {dynamicAttrs.length > 0 && (
           <>
             <Divider sx={{ mb: 2 }} />
@@ -126,10 +221,15 @@ export default function ProductDetails({ product }: Props) {
             <Grid container spacing={1} sx={{ mb: 3 }}>
               {dynamicAttrs.map((attr) => (
                 <Grid item xs={6} key={attr.label}>
-                  <Typography variant="caption" color="text.secondary" display="block">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ mb: 0.25 }}
+                  >
                     {attr.label}
                   </Typography>
-                  <Typography variant="body2" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={700}>
                     {attr.value}
                   </Typography>
                 </Grid>
@@ -138,41 +238,109 @@ export default function ProductDetails({ product }: Props) {
           </>
         )}
 
-        {/* Etiquetas */}
+        {/* ──── Etiquetas ──── */}
         {product.etiquetas && product.etiquetas.length > 0 && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5} sx={{ mb: 3 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            gap={0.5}
+            sx={{ mb: 3 }}
+          >
             {product.etiquetas.map((tag) => (
-              <Chip key={tag} label={tag} size="small" variant="outlined" />
+              <Chip
+                key={tag}
+                label={tag}
+                size="small"
+                variant="outlined"
+                color="secondary"
+              />
             ))}
           </Stack>
         )}
 
         <Divider sx={{ mb: 3 }} />
 
-        {/* Selector de cantidad + acciones */}
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Stack direction="row" alignItems="center" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-            <IconButton onClick={() => setCantidad((c) => Math.max(1, c - 1))} disabled={cantidad <= 1}>
+        {/* ──── Selector de cantidad + Botones de acción ──── */}
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+          {/* Controles de cantidad */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              backgroundColor: '#fafafa',
+            }}
+          >
+            <IconButton
+              onClick={() => setCantidad((c) => Math.max(1, c - 1))}
+              disabled={cantidad <= 1}
+              size="small"
+            >
               <RemoveIcon fontSize="small" />
             </IconButton>
-            <Typography sx={{ px: 2, fontWeight: 700, minWidth: 32, textAlign: 'center' }}>{cantidad}</Typography>
-            <IconButton onClick={() => setCantidad((c) => Math.min((product.stock ?? 0), c + 1))} disabled={cantidad >= (product.stock ?? 0)}>
+
+            <Typography
+              sx={{
+                px: 2,
+                fontWeight: 700,
+                minWidth: 40,
+                textAlign: 'center',
+                fontSize: '1.1rem',
+              }}
+            >
+              {cantidad}
+            </Typography>
+
+            <IconButton
+              onClick={() =>
+                setCantidad((c) => Math.min(product.stock ?? 0, c + 1))
+              }
+              disabled={cantidad >= (product.stock ?? 0) || agotado}
+              size="small"
+            >
               <AddIcon fontSize="small" />
             </IconButton>
           </Stack>
 
+          {/* Botón Agregar al Carrito */}
           <Button
             variant="contained"
             size="large"
             startIcon={<ShoppingCartIcon />}
             onClick={handleAddToCart}
-            disabled={((product.stock ?? 0) ?? 0) === 0}
-            sx={{ flex: 1, py: 1.5 }}
+            disabled={agotado}
+            sx={{
+              flex: 1,
+              minWidth: 150,
+              py: 1.5,
+              fontWeight: 700,
+              textTransform: 'none',
+              fontSize: '1rem',
+            }}
           >
-            Agregar al carrito
+            {agotado ? 'Agotado' : 'Agregar al carrito'}
           </Button>
 
-          <IconButton sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+          {/* Botón Favorito */}
+          <IconButton
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              backgroundColor: '#fafafa',
+              '&:hover': {
+                backgroundColor: '#f0f0f0',
+                color: 'error.main',
+              },
+              transition: 'all 0.2s',
+            }}
+            onClick={() => {
+              // TODO: Implementar wishlist
+            }}
+          >
             <FavoriteBorderIcon />
           </IconButton>
         </Stack>

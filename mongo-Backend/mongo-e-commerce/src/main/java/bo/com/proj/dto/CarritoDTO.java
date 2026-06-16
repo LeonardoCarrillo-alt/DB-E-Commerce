@@ -34,8 +34,8 @@ public class CarritoDTO {
 
     public static class ItemCarritoDTO {
         // 🚨 Forzamos a que en la red se llame "productoId" ignorando el snake_case global
-        @JsonProperty("productId")
-        public String productId;
+        @JsonProperty("productoId")
+        public String productoId;
         
         // 🚨 Forzamos a que en la red se llame "nombre" para que encaje con CartItemResponse
         @JsonProperty("nombre")

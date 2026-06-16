@@ -14,7 +14,7 @@ export interface RegisterPayload {
 
 export interface AuthUser {
   id: string
-  uuid: string
+  uuid?: string
   nombre: string
   email: string
   rol: 'SUPER_ADMIN' | 'ADMIN_TIENDA' | 'VENDEDOR' | 'CLIENTE'
@@ -35,9 +35,9 @@ export const authApi = {
   register: (data: RegisterPayload) =>
     axiosInstance.post<AuthResponse>('/auth/register', data),
 
-  /** POST /auth/refresh */
+  /** POST /auth/refresh — retorna token renovado + refreshToken */
   refreshToken: (refreshToken: string) =>
-    axiosInstance.post<{ token: string }>('/auth/refresh', { refreshToken }),
+    axiosInstance.post<AuthResponse>('/auth/refresh', { refreshToken }),
 
   /** POST /auth/logout — requiere Authorization header */
   logout: () =>

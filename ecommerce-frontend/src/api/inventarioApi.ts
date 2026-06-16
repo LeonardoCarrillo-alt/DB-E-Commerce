@@ -18,11 +18,13 @@ export interface ReservaResponse {
   reservaId: string
   expiraEn: string  // ISO date — expira en 15 min
   items: ReservaItem[]
+  total?: number
 }
 
 export interface ConfirmarPayload {
   reservaId: string
   orderId: string
+  items?: ReservaItem[]
 }
 
 export interface ReabastecerPayload {
@@ -36,7 +38,7 @@ export interface StockResponse {
   productoId: string
   variante?: string
   stockDisponible: number
-  stockReservado: number
+  stockReservado?: number
 }
 
 export interface AlertaStock {
@@ -65,8 +67,10 @@ export const inventarioApi = {
     axiosInstance.post('/inventario/confirmar', payload),
 
   /** DELETE /inventario/reservar/{reservaId} — cancela reserva y libera stock */
-  cancelarReserva: (reservaId: string) =>
-    axiosInstance.delete(`/inventario/reservar/${reservaId}`),
+  cancelarReserva: (reservaId: string, motivo?: string) =>
+    axiosInstance.delete(
+      `/inventario/reservar/${reservaId}${motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''}`
+    ),
 
   /** POST /inventario/reabastecer — agrega unidades al stock */
   reabastecer: (payload: ReabastecerPayload) =>

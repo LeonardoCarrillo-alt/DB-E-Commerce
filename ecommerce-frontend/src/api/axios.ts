@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { type AxiosError } from 'axios'
 import { API_BASE_URL, STORAGE_KEYS } from '../utils/constants'
 import { clearSession, getSessionId } from '../utils/helpers'
 
@@ -9,6 +9,26 @@ const axiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Flag para evitar múltiples refresh simultáneos
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: string) => void
+  reject: (reason?: unknown) => void
+}> = []
+
+const processQueue = (error?: unknown, token: string = '') => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+
+  isRefreshing = false
+  failedQueue = []
+}
 
 // ─── Request Interceptor ─────────────────────────────────────────────────────
 axiosInstance.interceptors.request.use(
@@ -23,6 +43,7 @@ axiosInstance.interceptors.request.use(
     if (sessionId) {
       config.headers['X-Session-Id'] = sessionId
     }
+
     const isGuest = !token
     if (isGuest) {
       config.headers['X-Invitado'] = 'true'
@@ -36,30 +57,60 @@ axiosInstance.interceptors.request.use(
 // ─── Response Interceptor ────────────────────────────────────────────────────
 axiosInstance.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-      const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
-
-      if (refreshToken) {
-        try {
-          const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken })
-          localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
-          originalRequest.headers.Authorization = `Bearer ${data.token}`
-          return axiosInstance(originalRequest)
-        } catch {
-          clearSession()
-          window.location.href = '/login'
-        }
-      } else {
-        clearSession()
-        window.location.href = '/login'
-      }
+    // Si no es 401 o ya reintentó, rechaza
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error)
     }
 
-    return Promise.reject(error)
+    // Si ya está refrescando, encola la petición
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({
+          resolve: (token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            resolve(axiosInstance(originalRequest))
+          },
+          reject: (err: unknown) => reject(err),
+        })
+      })
+    }
+
+    originalRequest._retry = true
+    isRefreshing = true
+
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+
+    if (!refreshToken) {
+      processQueue(new Error('No refresh token available'), '')
+      clearSession()
+      window.location.href = '/login'
+      return Promise.reject(error)
+    }
+
+    try {
+      // Usar instancia sin interceptores para evitar loops infinitos
+      const { data } = await axios.post<{ token: string; refreshToken: string }>(
+        `${API_BASE_URL}/auth/refresh`,
+        { refreshToken }
+      )
+
+      // Actualizar tokens en localStorage
+      localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
+
+      // Procesar cola y reintentar original
+      processQueue(undefined, data.token)
+      originalRequest.headers.Authorization = `Bearer ${data.token}`
+      return axiosInstance(originalRequest)
+    } catch (refreshError) {
+      processQueue(refreshError, '')
+      clearSession()
+      window.location.href = '/login'
+      return Promise.reject(refreshError)
+    }
   }
 )
 
