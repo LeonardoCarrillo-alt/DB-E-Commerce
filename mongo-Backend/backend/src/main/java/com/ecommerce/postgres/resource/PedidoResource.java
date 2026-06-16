@@ -4,6 +4,7 @@ import com.ecommerce.postgres.dto.request.PedidoRequest;
 import com.ecommerce.postgres.dto.response.PedidoResponse;
 import com.ecommerce.postgres.mapper.DtoMapper;
 import com.ecommerce.postgres.service.PedidoService;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -55,6 +56,7 @@ public class PedidoResource {
     }
 
     @POST
+    @PermitAll
     @Operation(summary = "Crear pedido", description = "Crea un nuevo pedido.")
     @APIResponse(responseCode = "201", description = "Pedido creado", content = @Content(mediaType = MediaType.APPLICATION_JSON, schema = @Schema(implementation = PedidoResponse.class)))
     @APIResponse(responseCode = "400", description = "Datos inválidos")

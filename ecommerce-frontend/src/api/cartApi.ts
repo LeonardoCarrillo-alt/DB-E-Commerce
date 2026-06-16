@@ -28,6 +28,13 @@ export interface CartResponse {
   codigoPromocion?: string
 }
 
+export interface CheckoutResponse {
+  reserva_id: string
+  carrito: { id: string }
+  total: number
+  monto_descuento?: number
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 // Nota: Los headers X-Session-Id y X-Invitado son inyectados automáticamente
 // por el interceptor de axios para usuarios invitados.
@@ -54,8 +61,8 @@ export const cartApi = {
     axiosInstance.delete<CartResponse>('/carrito'),
 
   /** POST /carrito/promocion — aplica código de promoción */
-  applyPromocion: (codigoPromocion: string) =>
-    axiosInstance.post<CartResponse>('/carrito/promocion', { codigoPromocion }),
+  applyPromocion: (codigo: string) =>
+    axiosInstance.post<CartResponse>('/carrito/promocion', { codigo_promocion: codigo }),
 
   /** DELETE /carrito/promocion — quita el código de promoción */
   removePromocion: () =>
@@ -67,7 +74,7 @@ export const cartApi = {
 
   /** POST /carrito/checkout/procesar — reserva stock */
   procesarCheckout: () =>
-    axiosInstance.post<{ reservaId: string; carritoId: string }>('/carrito/checkout/procesar'),
+    axiosInstance.post<CheckoutResponse>('/carrito/checkout/procesar'),
 
   /** POST /carrito/migrar?sessionId= — migra carrito de invitado tras login */
   migrarCarrito: (sessionId: string) =>

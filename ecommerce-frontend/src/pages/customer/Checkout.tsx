@@ -30,12 +30,16 @@ export default function Checkout() {
   const handleSubmit = async (data: CheckoutFormValues) => {
     setError(null)
     try {
-      // Paso 1: Procesar checkout → reserva stock (POST /carrito/checkout/procesar)
       setActiveStep(2)
-      const { reservaId, carritoId } = await cartService.procesarCheckout()
 
-      // Paso 2: Crear orden con el reservaId y carritoId retornados
-      await orderService.create(reservaId, carritoId, data)
+      // Paso 1: Sincronizar carrito local (Redux) al backend
+      await cartService.syncLocalCart(items)
+
+      // Paso 2: Procesar checkout → reserva stock (POST /carrito/checkout/procesar)
+      const response = await cartService.procesarCheckout()
+
+      // Paso 3: Crear orden con el reserva_id y carrito.id retornados
+      await orderService.create(response.reserva_id, response.carrito.id, data)
 
       // Paso 3: Limpiar carrito local y redirigir
       setSuccess(true)
