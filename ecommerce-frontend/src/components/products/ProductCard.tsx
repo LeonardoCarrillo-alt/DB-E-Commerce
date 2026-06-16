@@ -19,20 +19,30 @@ interface Props {
 export default function ProductCard({ product }: Props) {
   const dispatch = useAppDispatch()
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
-    dispatch(
-      addItem({
-        productId: product._id,
-        nombre: product.nombre,
-        precio: product.precio,
-        cantidad: 1,
-        imagen: product.imagenes?.[0],
-      })
-    )
-    cartService.addItem(product._id, 1).catch(console.error)
-  }
+  const handleAddToCart = () => {
+  console.log("=== PRODUCTO ORIGINAL DESDE TARJETA ===", product);
 
+  // 1. Despachamos a Redux usando la interfaz unificada 'productoId'
+  dispatch(
+    addItem({
+      productoId: product.id || product._id, // 🚨 CORREGIDO: Mapeamos 'id' de la BD a 'productoId' de Redux
+      nombre: product.nombre,
+      precio: product.precio,
+      cantidad: 1,
+      imagen:  product.imagenes?.[0] || ''
+    })
+  );
+
+  // 2. Llamamos al servicio pasando la propiedad real 'id' que tiene el objeto
+  // 🚨 CORREGIDO: Usamos product.id porque en la consola vimos que viene como 'id'
+  cartService.addItem(product.id || product._id, 1)
+    .then((response) => {
+      console.log("Añadido al backend con éxito:", response);
+    })
+    .catch((err) => {
+      console.error("Error al guardar en backend:", err);
+    });
+};
   return (
     <Card
       component={Link}

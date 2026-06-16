@@ -10,17 +10,46 @@ import type { CartResponse, CheckoutResponse } from '../api/cartApi'
 export const cartService = {
   async getCart(): Promise<CartResponse> {
     const { data } = await cartApi.getCart()
+    console.log("=== DEBUG BACKEND: getCart ===")
+    console.log(data)
     return data
+    
   },
 
   async addItem(productoId: string, cantidad: number, variante?: string) {
-    const { data } = await cartApi.addItem({ producto_id: productoId, cantidad, variante })
+    // 🚨 Extraemos los datos del usuario logueado del almacenamiento local (ajustar según tu auth)
+    const authState = JSON.parse(localStorage.getItem('auth_state') || '{}')
+    const user = authState?.user
+
+    // Si no está autenticado, enviamos valores genéricos (el interceptor de axios mandará el X-Session-Id de invitado)
+    const usuarioId = user?.email || user?.id || 'invitado'
+    const usuarioEmail = user?.email || 'invitado@tienda.com'
+
+    // Construimos el JSON estructurado exactamente en camelCase como lo requiere el DTO del backend
+    const { data } = await cartApi.addItem({ 
+      productoId: productoId, 
+      cantidad: cantidad, 
+      variante: variante || '',
+      usuarioId: usuarioId,
+      usuarioEmail: usuarioEmail
+    })
     return data
   },
 
   async updateItem(productoId: string, cantidad: number, variante?: string) {
+    const authState = JSON.parse(localStorage.getItem('auth_state') || '{}')
+    const user = authState?.user
+    const usuarioId = user?.email || user?.id || 'invitado'
+    const usuarioEmail = user?.email || 'invitado@tienda.com'
+
     // Si cantidad ≤ 0, el backend elimina el item automáticamente
-    const { data } = await cartApi.updateItem({ producto_id: productoId, cantidad, variante })
+    const { data } = await cartApi.updateItem({ 
+      productoId: productoId, 
+      cantidad: cantidad, 
+      variante: variante || '',
+      usuarioId: usuarioId,
+      usuarioEmail: usuarioEmail
+    })
     return data
   },
 
@@ -69,20 +98,30 @@ export const cartService = {
     // 1. Limpiar carrito en backend (por si tenía items de sesiones anteriores)
     await cartApi.clearCart()
 
-    // 2. Agregar cada item local al backend
+    // 2. Extraer datos de sesión para armar la petición masiva de ítems
+    const authState = JSON.parse(localStorage.getItem('auth_state') || '{}')
+    const user = authState?.user
+    const usuarioId = user?.email || user?.id || 'invitado'
+    const usuarioEmail = user?.email || 'invitado@tienda.com'
+
     const errores: string[] = []
     for (const item of items) {
-      const productoId = item.productId
+      // Damos soporte seguro a ambas propiedades por si quedan rastros del viejo productId
+      const productoId = item.productoId || (item as any).productId
+
       if (!productoId) {
-        const msg = `[cartService] item saltado — productId inválido: ${JSON.stringify(item)}`
+        const msg = `[cartService] item saltado — productoId inválido: ${JSON.stringify(item)}`
         console.warn(msg)
         errores.push(msg)
         continue
       }
       try {
         await cartApi.addItem({
-          producto_id: productoId,
+          productoId: productoId,
           cantidad: item.cantidad,
+          variante: (item as any).variante || '',
+          usuarioId: usuarioId,
+          usuarioEmail: usuarioEmail
         })
       } catch (err) {
         const msg = `[cartService] error al agregar item ${productoId}: ${(err as Error)?.message}`

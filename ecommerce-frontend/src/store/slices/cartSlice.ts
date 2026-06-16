@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 export interface CartItem {
-  productId: string
+  productoId: string // 🚨 CAMBIADO: De 'productoId' a 'productoId' para alinearse con el DTO
   nombre: string
   precio: number
   cantidad: number
@@ -11,7 +11,7 @@ export interface CartItem {
 interface CartState {
   items: CartItem[]
   total: number
-  isOpen: boolean   // controla el drawer del carrito
+  isOpen: boolean   
 }
 
 const initialState: CartState = {
@@ -30,7 +30,8 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addItem(state, action: PayloadAction<CartItem>) {
-      const existing = state.items.find((i) => i.productId === action.payload.productId)
+      // 🚨 CAMBIADO: Buscar usando .productoId
+      const existing = state.items.find((i) => i.productoId === action.payload.productoId)
       if (existing) {
         existing.cantidad += action.payload.cantidad
       } else {
@@ -41,13 +42,15 @@ const cartSlice = createSlice({
     },
 
     removeItem(state, action: PayloadAction<string>) {
-      state.items = state.items.filter((i) => i.productId !== action.payload)
+      // 🚨 CAMBIADO: Filtrar usando .productoId
+      state.items = state.items.filter((i) => i.productoId !== action.payload)
       state.total = calcTotal(state.items)
       localStorage.setItem('cart_items', JSON.stringify(state.items))
     },
 
-    updateQuantity(state, action: PayloadAction<{ productId: string; cantidad: number }>) {
-      const item = state.items.find((i) => i.productId === action.payload.productId)
+    updateQuantity(state, action: PayloadAction<{ productoId: string; cantidad: number }>) {
+      // 🚨 CAMBIADO: Buscar usando .productoId
+      const item = state.items.find((i) => i.productoId === action.payload.productoId)
       if (item) {
         item.cantidad = Math.max(1, action.payload.cantidad)
       }

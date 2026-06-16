@@ -3,9 +3,11 @@ import axiosInstance from './axios'
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface CartItemAPI {
-  producto_id: string
+  productoId: string
   cantidad: number
   variante?: string
+  usuarioId?: string
+  usuarioEmail?: string
 }
 
 export interface CartItemResponse {

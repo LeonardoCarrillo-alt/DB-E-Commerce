@@ -21,6 +21,8 @@ export default function CartDrawer() {
     navigate('/checkout')
   }
 
+  console.log("itemsss:::",items)
+  console.log(JSON.stringify(items, null, 2))
   return (
     <Drawer
       anchor="right"
@@ -48,7 +50,8 @@ export default function CartDrawer() {
             <Typography color="text.secondary">Tu carrito está vacío</Typography>
           </Box>
         ) : (
-          items.map((item) => <CartItem key={item.productId} item={item} />)
+          items.map((item) => <CartItem key={item.productoId} item={item} />)
+          
         )}
       </Box>
 

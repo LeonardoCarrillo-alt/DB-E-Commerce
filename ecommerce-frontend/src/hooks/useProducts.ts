@@ -11,14 +11,22 @@ export function useProducts(filters: ProductFilters = {}) {
   })
 }
 
+
+// export function useProduct(id: string | undefined) {
+//   return useQuery<Product>({
+//     queryKey: ['product', id],
+//     queryFn: () => productApi.getById(id as string).then((res) => res.data),
+//     enabled: !!id,
+//   })
+// }
 export function useProduct(id: string | undefined) {
   return useQuery<Product>({
     queryKey: ['product', id],
     queryFn: () => productApi.getById(id as string).then((res) => res.data),
-    enabled: !!id,
+    // 🚨 CAMBIO AQUÍ: Bloquea si id es undefined (valor) o si es el string "undefined"
+    enabled: !!id && id !== 'undefined', 
   })
 }
-
 // ─── Búsqueda POST /productos/buscar ─────────────────────────────────────────
 
 export function useProductSearch(body: ProductSearchBody, enabled = true) {
@@ -63,14 +71,22 @@ export function useDestacados(categoria?: string) {
 
 // ─── Relacionados ─────────────────────────────────────────────────────────────
 
+// export function useRelacionados(productoId: string | undefined) {
+//   return useQuery<Product[]>({
+//     queryKey: ['relacionados', productoId],
+//     queryFn: () => busquedaApi.relacionados(productoId as string).then((res) => res.data),
+//     enabled: !!productoId,
+//   })
+// }
+
 export function useRelacionados(productoId: string | undefined) {
   return useQuery<Product[]>({
     queryKey: ['relacionados', productoId],
     queryFn: () => busquedaApi.relacionados(productoId as string).then((res) => res.data),
-    enabled: !!productoId,
+    // 🚨 CAMBIO AQUÍ: Bloquea si productoId es undefined (valor) o si es el string "undefined"
+    enabled: !!productoId && productoId !== 'undefined',
   })
 }
-
 // ─── Mutaciones CRUD ─────────────────────────────────────────────────────────
 
 export function useCreateProduct() {

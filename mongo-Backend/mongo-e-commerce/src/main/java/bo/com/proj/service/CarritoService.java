@@ -411,7 +411,7 @@ public class CarritoService {
     
     private CarritoDTO toDTO(Carrito carrito) {
         CarritoDTO dto = new CarritoDTO();
-        dto.id = carrito.id.toString();
+        dto.id = carrito.id != null ? carrito.id.toString() : null;
         dto.usuarioId = carrito.usuarioId;
         dto.usuarioEmail = carrito.usuarioEmail;
         dto.subtotal = carrito.subtotal;
