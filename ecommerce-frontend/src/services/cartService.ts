@@ -1,6 +1,6 @@
 import { cartApi } from '../api/cartApi'
 import type { CartItem } from '../store/slices/cartSlice'
-import type { CartResponse } from '../api/cartApi'
+import type { CartResponse, CheckoutResponse } from '../api/cartApi'
 
 /**
  * Capa de servicio para el carrito.
@@ -14,13 +14,13 @@ export const cartService = {
   },
 
   async addItem(productoId: string, cantidad: number, variante?: string) {
-    const { data } = await cartApi.addItem({ productoId, cantidad, variante })
+    const { data } = await cartApi.addItem({ productoId: productoId, cantidad, variante })
     return data
   },
 
   async updateItem(productoId: string, cantidad: number, variante?: string) {
     // Si cantidad ≤ 0, el backend elimina el item automáticamente
-    const { data } = await cartApi.updateItem({ productoId, cantidad, variante })
+    const { data } = await cartApi.updateItem({ productoId: productoId, cantidad, variante })
     return data
   },
 
@@ -53,9 +53,27 @@ export const cartService = {
    * Procesa el checkout: reserva el stock de todos los ítems.
    * Retorna reservaId y carritoId necesarios para crear la orden.
    */
-  async procesarCheckout() {
+  async procesarCheckout(): Promise<CheckoutResponse> {
     const { data } = await cartApi.procesarCheckout()
     return data
+  },
+
+  /**
+   * Sincroniza el carrito local (Redux) con el backend.
+   * Limpia el carrito del backend y luego agrega cada item local.
+   * Debe llamarse antes de procesarCheckout.
+   */
+  async syncLocalCart(items: CartItem[]): Promise<void> {
+    // 1. Limpiar carrito en backend (por si tenía items de sesiones anteriores)
+    await cartApi.clearCart()
+
+    // 2. Agregar cada item local al backend
+    for (const item of items) {
+      await cartApi.addItem({
+        productoId: item.productId,
+        cantidad: item.cantidad,
+      })
+    }
   },
 
   /** Calcula el total localmente desde el estado Redux (sin llamada al backend) */
