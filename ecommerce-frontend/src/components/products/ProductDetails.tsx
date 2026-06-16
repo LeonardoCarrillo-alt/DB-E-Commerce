@@ -9,6 +9,7 @@ import AddIcon from '@mui/icons-material/Add'
 import RemoveIcon from '@mui/icons-material/Remove'
 import { useAppDispatch } from '../../store/hooks/useAuth'
 import { addItem, openCart } from '../../store/slices/cartSlice'
+import { cartService } from '../../services/cartService'
 import { formatCurrency } from '../../utils/formatCurrency'
 import type { Product } from '../../api/productApi'
 
@@ -43,6 +44,7 @@ export default function ProductDetails({ product }: Props) {
       imagen: images[0],
     }))
     dispatch(openCart())
+    cartService.addItem(product._id, cantidad).catch(console.error)
   }
 
   // Extrae atributos dinámicos presentes en el documento (no estándar)
