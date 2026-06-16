@@ -39,7 +39,7 @@ export default function ProductDetails({ product }: Props) {
     ? product.imagenes
     : ['https://via.placeholder.com/600x500?text=Sin+imagen']
 
-  const agotado = (product.stock ?? 0) === 0
+  const agotado = (product.stock_disponible ?? 0) === 0
 
   /**
    * Agregar al carrito.
@@ -192,7 +192,7 @@ export default function ProductDetails({ product }: Props) {
           label={
             agotado
               ? 'Agotado'
-              : `${product.stock ?? 0} disponible(s)`
+              : `${product.stock_disponible ?? 0} disponible(s)`
           }
           color={agotado ? 'error' : 'success'}
           size="small"
@@ -296,9 +296,9 @@ export default function ProductDetails({ product }: Props) {
 
             <IconButton
               onClick={() =>
-                setCantidad((c) => Math.min(product.stock ?? 0, c + 1))
+                setCantidad((c) => Math.min(product.stock_disponible ?? 0, c + 1))
               }
-              disabled={cantidad >= (product.stock ?? 0) || agotado}
+              disabled={cantidad >= (product.stock_disponible ?? 0) || agotado}
               size="small"
             >
               <AddIcon fontSize="small" />

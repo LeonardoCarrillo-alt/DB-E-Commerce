@@ -66,7 +66,7 @@ export default function ProductCard({ product }: Props) {
   }
 
   const imagenUrl = product.imagenes?.[0] || 'https://placehold.co/400x300?text=Sin+Imagen'
-  const agotado = (product.stock ?? 0) === 0
+  const agotado = (product.stock_disponible ?? 0) === 0
 
   return (
     <Card
