@@ -1,4 +1,4 @@
-import { axiosPostgres } from './axios'
+import { axiosMongo } from './axios'
 import type { OrderStatus } from '../utils/constants'
 
 export interface OrderItem {
@@ -35,17 +35,17 @@ export interface CreateOrderPayload {
 
 export const orderApi = {
   getMyOrders: (usuarioId: string) =>
-    axiosPostgres.get<Order[]>(`/pedidos/usuario/${usuarioId}`),
+    axiosMongo.get<Order[]>(`/pedidos/usuario/${usuarioId}`),
 
   getAll: () =>
-    axiosPostgres.get<Order[]>('/pedidos'),
+    axiosMongo.get<Order[]>('/pedidos'),
 
   getById: (id: string) =>
-    axiosPostgres.get<Order>(`/pedidos/${id}`),
+    axiosMongo.get<Order>(`/pedidos/${id}`),
 
   create: (data: CreateOrderPayload) =>
-    axiosPostgres.post<Order>('/pedidos', data),
+    axiosMongo.post<Order>('/pedidos', data),
 
   updateStatus: (id: string, estado: OrderStatus) =>
-    axiosPostgres.patch<Order>(`/pedidos/${id}/status`, { estado }),
+    axiosMongo.patch<Order>(`/pedidos/${id}/status`, { estado }),
 }

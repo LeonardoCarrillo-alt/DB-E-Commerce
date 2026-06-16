@@ -1,4 +1,4 @@
-import { axiosPostgres } from './axios'
+import { axiosMongo } from './axios'
 
 export interface User {
   id: string
@@ -13,17 +13,17 @@ export interface User {
 
 export const userApi = {
   getAll: () =>
-    axiosPostgres.get<User[]>('/usuarios'),
+    axiosMongo.get<User[]>('/usuarios'),
 
   getById: (id: string) =>
-    axiosPostgres.get<User>(`/usuarios/${id}`),
+    axiosMongo.get<User>(`/usuarios/${id}`),
 
   updateProfile: (id: string, data: Partial<User>) =>
-    axiosPostgres.put<User>(`/usuarios/${id}`, data),
+    axiosMongo.put<User>(`/usuarios/${id}`, data),
 
   changePassword: (id: string, data: { currentPassword: string; newPassword: string }) =>
-    axiosPostgres.patch(`/usuarios/${id}/password`, data),
+    axiosMongo.patch(`/usuarios/${id}/password`, data),
 
   deactivate: (id: string) =>
-    axiosPostgres.patch(`/usuarios/${id}/deactivate`),
+    axiosMongo.patch(`/usuarios/${id}/deactivate`),
 }

@@ -48,6 +48,7 @@ export const login = createAsyncThunk(
   }
 )
 
+// En authSlice.ts cambia el thunk de register por esto:
 export const register = createAsyncThunk(
   'auth/register',
   async (payload: RegisterPayload, { rejectWithValue }) => {
@@ -55,7 +56,11 @@ export const register = createAsyncThunk(
       const data = await authService.register(payload)
       return data
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
+      const error = err as { response?: { data?: any } }
+      
+      // 🚨 AGREGA ESTA LÍNEA AQUÍ PARA VER EL JSON DE ERROR EN LA CONSOLA:
+      console.log("Detalle del error 400 de Quarkus:", error.response?.data)
+      
       return rejectWithValue(error.response?.data?.message ?? 'Error al registrarse')
     }
   }
