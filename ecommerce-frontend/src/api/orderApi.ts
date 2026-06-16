@@ -1,4 +1,4 @@
-import axiosInstance from './axios'
+import { axiosMongo } from './axios'
 import type { OrderStatus } from '../utils/constants'
 
 export interface OrderItem {
@@ -11,9 +11,9 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: number
+  id: string
   uuid: string
-  clienteId: number
+  clienteId: string
   items: OrderItem[]
   subtotal: number
   descuento?: number
@@ -26,25 +26,26 @@ export interface Order {
 }
 
 export interface CreateOrderPayload {
-  reservaId: string
+  reservaId?: string
   carritoId: string
+  usuarioId: string
   direccionEnvio: string
   metodoPago: string
 }
 
 export const orderApi = {
-  getMyOrders: () =>
-    axiosInstance.get<Order[]>('/orders/my'),
+  getMyOrders: (usuarioId: string) =>
+    axiosMongo.get<Order[]>(`/pedidos/usuario/${usuarioId}`),
 
   getAll: () =>
-    axiosInstance.get<Order[]>('/orders'),
+    axiosMongo.get<Order[]>('/pedidos'),
 
-  getById: (id: number) =>
-    axiosInstance.get<Order>(`/orders/${id}`),
+  getById: (id: string) =>
+    axiosMongo.get<Order>(`/pedidos/${id}`),
 
   create: (data: CreateOrderPayload) =>
-    axiosInstance.post<Order>('/orders', data),
+    axiosMongo.post<Order>('/pedidos', data),
 
-  updateStatus: (id: number, estado: OrderStatus) =>
-    axiosInstance.patch<Order>(`/orders/${id}/status`, { estado }),
+  updateStatus: (id: string, estado: OrderStatus) =>
+    axiosMongo.patch<Order>(`/pedidos/${id}/status`, { estado }),
 }

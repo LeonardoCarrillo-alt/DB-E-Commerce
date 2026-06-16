@@ -37,7 +37,7 @@ export default function ProductDetails({ product }: Props) {
 
   const handleAddToCart = () => {
     dispatch(addItem({
-      productId: product._id,
+      productId: product.id,
       nombre: product.nombre,
       precio: product.precio,
       cantidad,

@@ -1,16 +1,12 @@
-package bo.com.proj.dto;
+package bo.com.proj.dto; // O el paquete que corresponda en tu Mongo
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class UsuarioCreateRequestDTO {
     public String email;
-
-    @JsonProperty("passwordHash")
-    public String passwordHash;
-
     public String nombre;
-    public Boolean activo = true;
+    public boolean activo;
 
-    @JsonProperty("tiendaId")
-    public String tiendaId;
+    @JsonProperty("password_hash") // 🚨 OBLIGA A MONGO A ENVIARLO ASÍ EXACTAMENTE
+    public String passwordHash; 
 }

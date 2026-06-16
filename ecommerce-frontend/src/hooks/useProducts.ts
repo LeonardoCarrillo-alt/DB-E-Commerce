@@ -1,20 +1,21 @@
-// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { productApi, busquedaApi, type ProductFilters, type Product, type ProductSearchBody, type AdvancedSearchBody, type ProductsResponse } from '../api/productApi'
+import { productService } from '../services/productService'
+import type { ProductFilters, Product, ProductSearchBody, AdvancedSearchBody, ProductsResponse } from '../api/productApi'
+import type { ProductFormValues } from '../schemas'
 
 // ─── Listado básico ───────────────────────────────────────────────────────────
 
 export function useProducts(filters: ProductFilters = {}) {
   return useQuery<Product[]>({
     queryKey: ['products', filters],
-    queryFn: () => productApi.getAll(filters).then((res) => res.data),
+    queryFn: () => productService.getAll(filters),
   })
 }
 
 export function useProduct(id: string | undefined) {
   return useQuery<Product>({
     queryKey: ['product', id],
-    queryFn: () => productApi.getById(id as string).then((res) => res.data),
+    queryFn: () => productService.getById(id as string),
     enabled: !!id,
   })
 }
@@ -24,7 +25,7 @@ export function useProduct(id: string | undefined) {
 export function useProductSearch(body: ProductSearchBody, enabled = true) {
   return useQuery<ProductsResponse>({
     queryKey: ['products', 'buscar', body],
-    queryFn: () => productApi.buscar(body).then((res) => res.data),
+    queryFn: () => productService.buscar(body),
     enabled,
     placeholderData: keepPreviousData,
   })
@@ -35,7 +36,7 @@ export function useProductSearch(body: ProductSearchBody, enabled = true) {
 export function useAdvancedSearch(body: AdvancedSearchBody, enabled = true) {
   return useQuery<ProductsResponse>({
     queryKey: ['products', 'advanced', body],
-    queryFn: () => busquedaApi.busquedaAvanzada(body).then((res) => res.data),
+    queryFn: () => productService.busquedaAvanzada(body),
     enabled,
     placeholderData: keepPreviousData,
   })
@@ -46,7 +47,7 @@ export function useAdvancedSearch(body: AdvancedSearchBody, enabled = true) {
 export function useAutocompletar(q: string) {
   return useQuery<string[]>({
     queryKey: ['autocompletar', q],
-    queryFn: () => busquedaApi.autocompletar(q).then((res) => res.data),
+    queryFn: () => productService.autocompletar(q),
     enabled: q.length >= 2,
     staleTime: 1000 * 30,
   })
@@ -57,7 +58,7 @@ export function useAutocompletar(q: string) {
 export function useDestacados(categoria?: string) {
   return useQuery<Product[]>({
     queryKey: ['destacados', categoria],
-    queryFn: () => busquedaApi.destacados(categoria).then((res) => res.data),
+    queryFn: () => productService.getDestacados(categoria),
   })
 }
 
@@ -66,7 +67,7 @@ export function useDestacados(categoria?: string) {
 export function useRelacionados(productoId: string | undefined) {
   return useQuery<Product[]>({
     queryKey: ['relacionados', productoId],
-    queryFn: () => busquedaApi.relacionados(productoId as string).then((res) => res.data),
+    queryFn: () => productService.getRelacionados(productoId as string),
     enabled: !!productoId,
   })
 }
@@ -76,7 +77,8 @@ export function useRelacionados(productoId: string | undefined) {
 export function useCreateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<Product, '_id'>) => productApi.create(data).then((res) => res.data),
+    mutationFn: (data: { values: ProductFormValues; extraAttrs: Record<string, unknown>; tiendaId: string }) =>
+      productService.create(data.values, data.extraAttrs, data.tiendaId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
   })
 }
@@ -84,8 +86,8 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Product> }) =>
-      productApi.update(id, data).then((res) => res.data),
+    mutationFn: (data: { id: string; values: ProductFormValues; extraAttrs: Record<string, unknown>; tiendaId: string }) =>
+      productService.update(data.id, data.values, data.extraAttrs, data.tiendaId),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
       queryClient.invalidateQueries({ queryKey: ['product', id] })
@@ -96,7 +98,7 @@ export function useUpdateProduct() {
 export function useDeleteProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => productApi.delete(id),
+    mutationFn: (id: string) => productService.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
   })
 }

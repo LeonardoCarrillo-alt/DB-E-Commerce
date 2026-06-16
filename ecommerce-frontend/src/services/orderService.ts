@@ -3,8 +3,8 @@ import type { OrderStatus } from '../utils/constants'
 import type { CheckoutFormValues } from '../schemas'
 
 export const orderService = {
-  async getMyOrders(): Promise<Order[]> {
-    const { data } = await orderApi.getMyOrders()
+  async getMyOrders(usuarioId: string): Promise<Order[]> {
+    const { data } = await orderApi.getMyOrders(usuarioId)
     return data
   },
 
@@ -13,11 +13,10 @@ export const orderService = {
     return data
   },
 
-  async getById(id: number): Promise<Order> {
+  async getById(id: string): Promise<Order> {
     const { data } = await orderApi.getById(id)
     return data
   },
-
   /**
    * Crea la orden usando el reservaId y carritoId retornados por
    * POST /carrito/checkout/procesar (el stock ya fue reservado).
@@ -25,18 +24,20 @@ export const orderService = {
   async create(
     reservaId: string,
     carritoId: string,
-    checkoutData: CheckoutFormValues
+    checkoutData: CheckoutFormValues,
+    usuarioId: string
   ): Promise<Order> {
     const { data } = await orderApi.create({
       reservaId,
       carritoId,
+      usuarioId,
       direccionEnvio: `${checkoutData.calle}, ${checkoutData.ciudad}, ${checkoutData.departamento}`,
       metodoPago: checkoutData.metodoPago,
     })
     return data
   },
 
-  async updateStatus(id: number, estado: OrderStatus): Promise<Order> {
+  async updateStatus(id: string, estado: OrderStatus): Promise<Order> {
     const { data } = await orderApi.updateStatus(id, estado)
     return data
   },

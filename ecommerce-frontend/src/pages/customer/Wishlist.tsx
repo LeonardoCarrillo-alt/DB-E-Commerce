@@ -34,7 +34,7 @@ export default function Wishlist() {
   // (en un escenario real, se haría una llamada con los IDs específicos)
   const { data: products, isLoading } = useProducts()
 
-  const wishlistProducts = products?.filter((p) => wishlistIds.includes(p._id)) ?? []
+  const wishlistProducts = products?.filter((p) => wishlistIds.includes(p.id)) ?? []
 
   const handleRemove = (productId: string) => {
     const updated = toggleWishlist(productId)
@@ -71,12 +71,12 @@ export default function Wishlist() {
       ) : (
         <Grid container spacing={3}>
           {wishlistProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={product._id}>
+            <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
               <Box sx={{ position: 'relative' }}>
                 <ProductCard product={product} />
                 <IconButton
                   size="small"
-                  onClick={() => handleRemove(product._id)}
+                  onClick={() => handleRemove(product.id)}
                   sx={{
                     position: 'absolute', top: 8, right: 8,
                     bgcolor: 'rgba(255,255,255,0.95)', '&:hover': { bgcolor: 'white' },

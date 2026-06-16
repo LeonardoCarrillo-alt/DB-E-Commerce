@@ -1,25 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { orderApi, type CreateOrderPayload } from '../api/orderApi'
+import { orderService } from '../services/orderService'
 import type { OrderStatus } from '../utils/constants'
+import { useAuth } from '../store/hooks/useAuth'
+import type { CheckoutFormValues } from '../schemas'
 
 export function useMyOrders() {
+  const { user } = useAuth()
   return useQuery({
-    queryKey: ['orders', 'my'],
-    queryFn: () => orderApi.getMyOrders().then((res) => res.data),
+    queryKey: ['orders', 'my', user?.id],
+    queryFn: () => orderService.getMyOrders(user!.id),
+    enabled: !!user?.id,
   })
 }
 
 export function useAllOrders() {
   return useQuery({
     queryKey: ['orders', 'all'],
-    queryFn: () => orderApi.getAll().then((res) => res.data),
+    queryFn: () => orderService.getAll(),
   })
 }
 
-export function useOrder(id: number | undefined) {
+export function useOrder(id: string | undefined) {
   return useQuery({
     queryKey: ['order', id],
-    queryFn: () => orderApi.getById(id as number).then((res) => res.data),
+    queryFn: () => orderService.getById(id as string),
     enabled: !!id,
   })
 }
@@ -27,7 +31,8 @@ export function useOrder(id: number | undefined) {
 export function useCreateOrder() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: CreateOrderPayload) => orderApi.create(data).then((res) => res.data),
+    mutationFn: (data: { reservaId: string; carritoId: string; checkoutData: CheckoutFormValues; usuarioId: string }) =>
+      orderService.create(data.reservaId, data.carritoId, data.checkoutData, data.usuarioId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
     },
@@ -37,8 +42,8 @@ export function useCreateOrder() {
 export function useUpdateOrderStatus() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, estado }: { id: number; estado: OrderStatus }) =>
-      orderApi.updateStatus(id, estado).then((res) => res.data),
+    mutationFn: ({ id, estado }: { id: string; estado: OrderStatus }) =>
+      orderService.updateStatus(id, estado),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
     },

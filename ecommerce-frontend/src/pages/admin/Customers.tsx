@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   Box, Typography, TextField, InputAdornment, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, Paper, Chip,
@@ -8,7 +7,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import BlockIcon from '@mui/icons-material/Block'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { userApi } from '../../api/userApi'
+import { useUsers } from '../../hooks/useUsers'
 import Loading from '../../components/common/Loading'
 import { formatDateShort } from '../../utils/formatDate'
 import { getInitials, stringToColor } from '../../utils/helpers'
@@ -16,10 +15,7 @@ import { getInitials, stringToColor } from '../../utils/helpers'
 export default function Customers() {
   const [search, setSearch] = useState('')
 
-  const { data: users, isLoading } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => userApi.getAll().then((res) => res.data),
-  })
+  const { data: users, isLoading } = useUsers()
 
   const filtered = users?.filter(
     (u) =>
@@ -81,7 +77,7 @@ export default function Customers() {
                     <Chip
                       label={user.rol}
                       size="small"
-                      color={user.rol === 'ADMIN' ? 'primary' : 'default'}
+                      color={user.rol === 'ADMIN_TIENDA' || user.rol === 'SUPER_ADMIN' ? 'primary' : 'default'}
                       sx={{ fontWeight: 600 }}
                     />
                   </TableCell>

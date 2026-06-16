@@ -6,7 +6,7 @@ import {
 } from '@mui/material'
 import CheckoutForm from '../../components/forms/CheckoutForm'
 import CartSummary from '../../components/cart/CartSummary'
-import { useCart } from '../../store/hooks/useAuth'
+import { useCart, useAuth } from '../../store/hooks/useAuth'
 import { useAppDispatch } from '../../store/hooks/useAuth'
 import { clearCart } from '../../store/slices/cartSlice'
 import { useCreateOrder } from '../../hooks/useOrders'
@@ -18,6 +18,7 @@ export default function Checkout() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { items } = useCart()
+  const { user } = useAuth()
   const createOrder = useCreateOrder()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
