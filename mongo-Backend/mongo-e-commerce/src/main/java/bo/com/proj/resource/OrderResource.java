@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -37,6 +38,9 @@ public class OrderResource {
     @RestClient
     PedidoClient pedidoClient;
 
+    @Inject
+    JsonWebToken jwt;
+
     @Context
     SecurityContext securityContext;
 
@@ -44,7 +48,7 @@ public class OrderResource {
     @RolesAllowed({"CLIENTE", "ADMIN_TIENDA", "SUPER_ADMIN"})
     @Operation(summary = "Crear pedido desde el checkout")
     public Response create(@Valid CreateOrderRequestDTO request) {
-        String usuarioId = securityContext.getUserPrincipal().getName();
+        String usuarioId = jwt.getSubject();
 
         CarritoDTO carrito = carritoService.getCarritoByUsuario(usuarioId, false);
 
@@ -110,7 +114,7 @@ public class OrderResource {
     @RolesAllowed({"CLIENTE", "ADMIN_TIENDA", "SUPER_ADMIN"})
     @Operation(summary = "Listar pedidos del usuario autenticado")
     public Response findMyOrders() {
-        String usuarioId = securityContext.getUserPrincipal().getName();
+        String usuarioId = jwt.getSubject();
         List<PedidoResponseDTO> pedidos = pedidoClient.findByUsuarioId(usuarioId);
         return Response.ok(pedidos).build();
     }

@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.hibernate.Hibernate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -61,6 +62,9 @@ public class PedidoService {
             throw new BusinessException("El estado del pedido es obligatorio");
         }
         pedidoRepository.persist(pedido);
+        if (pedido.getDetalles() != null) {
+            Hibernate.initialize(pedido.getDetalles());
+        }
         return pedido;
     }
 
@@ -83,6 +87,9 @@ public class PedidoService {
         }
         existing.setEstado(pedido.getEstado());
         existing.setTotal(pedido.getTotal());
+        if (existing.getDetalles() != null) {
+            Hibernate.initialize(existing.getDetalles());
+        }
         return existing;
     }
 

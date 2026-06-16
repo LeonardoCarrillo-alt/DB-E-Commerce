@@ -1,4 +1,4 @@
-import { Box, Typography, Grid, Card, CardContent, MenuItem, Select, FormControl, InputLabel, Stack } from '@mui/material'
+import { Box, Typography, Grid, Card, CardContent, MenuItem, Select, FormControl, InputLabel, Stack, CircularProgress } from '@mui/material'
 import { useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -8,26 +8,19 @@ import SalesChart from '../../components/dashboard/SalesChart'
 import CategoryChart from '../../components/dashboard/CategoryChart'
 import StatsCards from '../../components/dashboard/StatsCards'
 import { formatCurrency } from '../../utils/formatCurrency'
-
-const topProductsData = [
-  { producto: 'Laptop HP', ventas: 45 },
-  { producto: 'Polera Básica', ventas: 38 },
-  { producto: 'Silla Oficina', ventas: 29 },
-  { producto: 'Smart TV 55"', ventas: 24 },
-  { producto: 'Juego de Ollas', ventas: 21 },
-]
-
-const monthlySales = [
-  { fecha: 'Ene', ventas: 12400, pedidos: 64 },
-  { fecha: 'Feb', ventas: 9800, pedidos: 51 },
-  { fecha: 'Mar', ventas: 15600, pedidos: 83 },
-  { fecha: 'Abr', ventas: 14200, pedidos: 74 },
-  { fecha: 'May', ventas: 19800, pedidos: 102 },
-  { fecha: 'Jun', ventas: 17500, pedidos: 91 },
-]
+import { useDashboardData } from '../../hooks/useDashboardData'
 
 export default function Reports() {
   const [period, setPeriod] = useState('6m')
+  const { totalVentas, totalPedidos, activeProducts, clientes, salesData, categoryData, topProductsData, isLoading } = useDashboardData()
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
 
   return (
     <Box>
@@ -50,15 +43,15 @@ export default function Reports() {
       </Stack>
 
       <Box sx={{ mb: 3 }}>
-        <StatsCards ventas={89300} clientes={248} productos={132} pedidos={465} />
+        <StatsCards ventas={totalVentas} clientes={clientes} productos={activeProducts} pedidos={totalPedidos} />
       </Box>
 
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          <SalesChart data={monthlySales} />
+          <SalesChart data={salesData} />
         </Grid>
         <Grid item xs={12} lg={4}>
-          <CategoryChart />
+          <CategoryChart data={categoryData} title="Productos por categoría" />
         </Grid>
 
         {/* Top productos */}
@@ -91,15 +84,17 @@ export default function Reports() {
               </Typography>
               <Grid container spacing={2}>
                 {[
-                  { label: 'Ingresos brutos', value: 89300 },
-                  { label: 'Ticket promedio', value: 192 },
-                  { label: 'Ingresos por envío', value: 3450 },
-                  { label: 'Devoluciones', value: -1240 },
+                  { label: 'Ingresos brutos', value: totalVentas },
+                  { label: 'Ticket promedio', value: totalPedidos > 0 ? Math.round(totalVentas / totalPedidos) : 0 },
+                  { label: 'Pedidos totales', value: totalPedidos },
+                  { label: 'Productos activos', value: activeProducts },
                 ].map((item) => (
                   <Grid item xs={6} sm={3} key={item.label}>
                     <Typography variant="caption" color="text.secondary">{item.label}</Typography>
                     <Typography variant="h6" fontWeight={800} color={item.value < 0 ? 'error.main' : 'text.primary'}>
-                      {formatCurrency(item.value)}
+                      {item.label === 'Ingresos brutos' || item.label === 'Ticket promedio'
+                        ? formatCurrency(Number(item.value))
+                        : item.value}
                     </Typography>
                   </Grid>
                 ))}

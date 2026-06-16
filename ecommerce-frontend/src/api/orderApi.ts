@@ -1,12 +1,19 @@
 import axiosInstance from './axios'
 import type { OrderStatus } from '../utils/constants'
 
+export interface OrderItem {
+  producto_id: string
+  cantidad: number
+  precio_unitario: number
+}
+
 export interface Order {
   id: string
   usuarioId: string
   total: number
   estado: OrderStatus
   fecha_creacion: string
+  items?: OrderItem[]
 }
 
 export interface CreateOrderPayload {
