@@ -453,10 +453,29 @@ Endpoints protegidos con `@Authenticated` excepto `GET /direcciones`. El `usuari
 | `POST` | `/facturas` | `FacturaRequest` | `FacturaResponse` | `201`, `400` |
 | `PUT` | `/facturas/{id}` | `FacturaRequest` | `FacturaResponse` | `200`, `400`, `404` |
 | `DELETE` | `/facturas/{id}` | — | — | `204`, `404` |
+| `POST` | `/facturas/generar` | `GenerarFacturaRequest` | `FacturaResponse` | `201`, `400` |
+| `GET` | `/facturas/files/{pedidoId}/xml` | — | `application/xml` | `200`, `404` |
+| `GET` | `/facturas/files/{pedidoId}/pdf` | — | `application/pdf` | `200`, `404` |
 
 > Relación 1:1 con pedido (`pedido_id` UNIQUE).
 
-**Ejemplo POST:**
+**`POST /facturas/generar`** — Genera automáticamente CFDI XML + PDF localmente (sin depender de servicios externos). Requiere pedidoId, rfc, razonSocial, codigoPostal y regimenFiscal. Los archivos se guardan en `./uploads/facturas/`.
+
+```json
+{
+  "pedidoId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "rfc": "XAXX010101000",
+  "razonSocial": "Juan Pérez",
+  "codigoPostal": "12345",
+  "regimenFiscal": "601"
+}
+```
+
+**`GET /facturas/files/{pedidoId}/xml`** — Descarga el XML del CFDI generado localmente.
+
+**`GET /facturas/files/{pedidoId}/pdf`** — Descarga el PDF de la factura generado localmente (OpenPDF).
+
+**Ejemplo POST manual:**
 
 ```json
 {
