@@ -12,6 +12,7 @@ public class ProductoDTO {
     @JsonProperty("tiendaId")
     public String tiendaId;
     public Map<String, Object> atributos;
+    public String imageBase64;
     public Boolean activo;
     public Integer stockDisponible;
     public Boolean disponible;
