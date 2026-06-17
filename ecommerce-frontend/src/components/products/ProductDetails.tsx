@@ -11,7 +11,7 @@ import { useAppDispatch } from '../../store/hooks/useAuth'
 import { addItem, openCart } from '../../store/slices/cartSlice'
 import { cartService } from '../../services/cartService'
 import { formatCurrency } from '../../utils/formatCurrency'
-import type { Product } from '../../api/productApi'
+import { getProductImageSrc, type Product } from '../../api/productApi'
 
 interface Props {
   product: Product
@@ -37,7 +37,7 @@ export default function ProductDetails({ product }: Props) {
 
   const images = product.imagenes?.length
     ? product.imagenes
-    : ['https://via.placeholder.com/600x500?text=Sin+imagen']
+    : [getProductImageSrc(product)]
 
   const agotado = (product.stock_disponible ?? 0) === 0
 
@@ -79,7 +79,7 @@ export default function ProductDetails({ product }: Props) {
     // 3️⃣ Sincronizar con backend
     try {
       const response = await cartService.addItem(mongoId, cantidad)
-      console.log('✅ Backend sincronizado. Items:', response.items?.length)
+      console.log('✅ Backend sincronizado. Items:', response.data.items?.length)
     } catch (err) {
       console.error('❌ Error al sincronizar con backend:', err)
       // Redux ya fue actualizado, así que el carrito local refleja el cambio

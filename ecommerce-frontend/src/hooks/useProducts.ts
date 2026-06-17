@@ -1,6 +1,7 @@
 // src/hooks/useProducts.ts
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { productApi, busquedaApi, type ProductFilters, type Product, type ProductSearchBody, type AdvancedSearchBody, type ProductsResponse } from '../api/productApi'
+import { productApi, busquedaApi, type ProductFilters, type Product, type ProductSearchBody, type AdvancedSearchBody, type ProductsResponse, type ProductMutationPayload } from '../api/productApi'
+import { type SugerenciaDTO } from '../api/productApi'
 
 // ─── Listado básico ───────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ export function useProduct(id: string | undefined) {
 // ─── Búsqueda POST /productos/buscar ─────────────────────────────────────────
 
 export function useProductSearch(body: ProductSearchBody, enabled = true) {
-  return useQuery<ProductsResponse>({
+  return useQuery<Product[] | ProductsResponse>({
     queryKey: ['products', 'buscar', body],
     queryFn: () => productApi.buscar(body).then((res) => res.data),
     enabled,
@@ -45,7 +46,7 @@ export function useAdvancedSearch(body: AdvancedSearchBody, enabled = true) {
 // ─── Autocompletado ───────────────────────────────────────────────────────────
 
 export function useAutocompletar(q: string) {
-  return useQuery<string[]>({
+  return useQuery<SugerenciaDTO[]>({
     queryKey: ['autocompletar', q],
     queryFn: () => busquedaApi.autocompletar(q).then((res) => res.data),
     enabled: q.length >= 2,
@@ -78,7 +79,7 @@ export function useRelacionados(productoId: string | undefined) {
 export function useCreateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<Product, '_id'>) => productApi.create(data).then((res) => res.data),
+    mutationFn: (data: ProductMutationPayload) => productApi.create(data).then((res) => res.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
   })
 }
@@ -86,7 +87,7 @@ export function useCreateProduct() {
 export function useUpdateProduct() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Product> }) => {
+    mutationFn: ({ id, data }: { id: string; data: ProductMutationPayload }) => {
       // 🚨 CRÍTICO: Bloqueo en la raíz de la mutación por si se cuela un ID corrupto
       if (!id || id === 'undefined') {
         return Promise.reject(new Error('❌ El ID proporcionado para actualizar no es válido.'))

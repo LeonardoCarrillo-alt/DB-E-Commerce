@@ -59,6 +59,7 @@ public class ProductoService {
         if (dto.activo != null) p.activo = dto.activo;
         p.stockDisponible = dto.stockDisponible;
         p.disponible = dto.disponible;
+        if (dto.imageBase64 != null) p.imageBase64 = dto.imageBase64;
         System.out.println("=======================================================");
     System.out.println("Guardando en MongoDB: " + p.stockDisponible);
     System.out.println("=======================================================");
@@ -98,6 +99,7 @@ public class ProductoService {
     dto.categoria = p.categoria;
     dto.tiendaId = p.tiendaId;
     dto.atributos = p.atributos;
+    dto.imageBase64 = p.imageBase64;
     dto.activo = p.activo;
 
     // 🌟 AGREGA ESTAS DOS LÍNEAS AQUÍ:

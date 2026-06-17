@@ -16,6 +16,9 @@ public class Producto extends PanacheMongoEntity {
     
     @BsonProperty("tienda_id")
     public String tiendaId;         // UUID de la tienda (desde PostgreSQL)
+
+    @BsonProperty("image_base64")
+    public String imageBase64;
     
     // 🌟 AÑADE ESTOS DOS CAMPOS AQUÍ:
     @BsonProperty("stock_disponible")

@@ -9,7 +9,7 @@ import { useAppDispatch } from '../../store/hooks/useAuth'
 import { addItem } from '../../store/slices/cartSlice'
 import { cartService } from '../../services/cartService'
 import { formatCurrency } from '../../utils/formatCurrency'
-import type { Product } from '../../api/productApi'
+import { getProductImageSrc, type Product } from '../../api/productApi'
 import { truncateText } from '../../utils/helpers'
 
 interface Props {
@@ -49,7 +49,7 @@ export default function ProductCard({ product }: Props) {
         nombre: product.nombre,
         precio: product.precio,
         cantidad: 1,
-        imagen: product.imagenes?.[0] || '',
+        imagen: getProductImageSrc(product),
       })
     )
     console.log('✅ Despachado a Redux con productoId:', mongoId)
@@ -65,7 +65,7 @@ export default function ProductCard({ product }: Props) {
     }
   }
 
-  const imagenUrl = product.imagenes?.[0] || 'https://placehold.co/400x300?text=Sin+Imagen'
+  const imagenUrl = getProductImageSrc(product)
   const agotado = (product.stock_disponible ?? 0) === 0
 
   return (

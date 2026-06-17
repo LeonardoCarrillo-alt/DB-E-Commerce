@@ -5,9 +5,6 @@ import { clearSession, getSessionId } from '../utils/helpers'
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 })
 
 // Flag para evitar múltiples refresh simultáneos
