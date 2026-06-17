@@ -26,30 +26,42 @@ export const cartService = {
    * Agrega un ítem al carrito.
    * Normaliza tanto product.id como product._id a productoId para el backend.
    */
-  async addItem(
-    productoId: string,
-    cantidad: number,
-    variante?: string
-  ): Promise<CartResponse> {
-    const authState = JSON.parse(localStorage.getItem('auth_state') || '{}')
-    const user = authState?.user
+  // async addItem(
+  //   productoId: string,
+  //   cantidad: number,
+  //   variante?: string
+  // ): Promise<CartResponse> {
+  //   const authState = JSON.parse(localStorage.getItem('auth_state') || '{}')
+  //   const user = authState?.user
 
-    const usuarioId = user?.email || user?.id || 'invitado'
-    const usuarioEmail = user?.email || 'invitado@tienda.com'
+  //   const usuarioId = user?.email || user?.id || 'invitado'
+  //   const usuarioEmail = user?.email || 'invitado@tienda.com'
 
-    // 🔴 CRÍTICO: Backend espera "productoId" (camelCase estricto) en el request
-    const { data } = await cartApi.addItem({
-      productoId: productoId, // ← Nombre exacto esperado por AgregarItemDTO
+  //   // 🔴 CRÍTICO: Backend espera "productoId" (camelCase estricto) en el request
+  //   const { data } = await cartApi.addItem({
+  //     productoId: productoId, // ← Nombre exacto esperado por AgregarItemDTO
+  //     cantidad: cantidad,
+  //     variante: variante || '',
+  //     usuarioId: usuarioId,
+  //     usuarioEmail: usuarioEmail,
+  //   })
+
+  //   console.log('✅ Item agregado al backend:', productoId, 'cantidad:', cantidad)
+  //   return data
+  // },
+  addItem: async (productoId: string, cantidad: number, variante?: string) => {
+    // 🚨 Forzamos la creación del JSON exacto que espera AgregarItemDTO en Java
+    const payload = {
+      productoId: productoId, // Aseguramos que se llame 'productoId' y no '_id'
       cantidad: cantidad,
-      variante: variante || '',
-      usuarioId: usuarioId,
-      usuarioEmail: usuarioEmail,
-    })
+      variante: variante || undefined
+    };
 
-    console.log('✅ Item agregado al backend:', productoId, 'cantidad:', cantidad)
-    return data
+    console.log("✈️ Enviando payload al backend:", payload);
+    
+    // Llamamos a la API enviando el objeto completo en el body del POST
+    return await cartApi.addItem(payload);
   },
-
   /**
    * Actualiza la cantidad de un ítem.
    * Si cantidad ≤ 0, el backend lo elimina automáticamente.
