@@ -120,6 +120,7 @@ public class ProductoService {
         p.activo = dto.activo != null ? dto.activo : true;
         p.stockDisponible = dto.stockDisponible;
         p.disponible = dto.disponible;
+        p.imageBase64 = dto.imageBase64;
         return p;
     }
 
