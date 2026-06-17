@@ -137,6 +137,12 @@ A través de `PostgreSQLClient` y `PedidoClient` (MicroProfile REST Client), est
 | `GET /api/envios/pedido/{pedidoId}` | `EnvioClient` | Obtener envío por pedido |
 | `PUT /api/envios/{id}` | `EnvioClient` | Actualizar envío |
 | `DELETE /api/envios/{id}` | `EnvioClient` | Eliminar envío |
+| `GET /api/facturas` | `FacturaClient` | Listar todas las facturas |
+| `GET /api/facturas/{id}` | `FacturaClient` | Obtener factura por ID |
+| `GET /api/facturas/pedido/{pedidoId}` | `FacturaClient` | Obtener facturas por pedido |
+| `POST /api/facturas` | `FacturaClient` | Crear factura manual |
+| `PUT /api/facturas/{id}` | `FacturaClient` | Actualizar factura |
+| `DELETE /api/facturas/{id}` | `FacturaClient` | Eliminar factura |
 
 El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar productos, inventario y promociones a tiendas específicas.
 
@@ -154,6 +160,13 @@ quarkus.rest-client.pedidos-api.url=http://host.docker.internal:8082
 # Envíos
 envios-api/mp-rest/url=http://host.docker.internal:8082
 quarkus.rest-client.envios-api.url=http://host.docker.internal:8082
+
+# Facturas
+facturas-api/mp-rest/url=http://host.docker.internal:8082
+quarkus.rest-client.facturas-api.url=http://host.docker.internal:8082
+facturas-api/mp-rest/scope=jakarta.inject.Singleton
+facturas-api/mp-rest/connect-timeout=5000
+facturas-api/mp-rest/read-timeout=5000
 ```
 
 ---
