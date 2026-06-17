@@ -107,6 +107,7 @@ public class DtoMapper {
         response.setTotal(pedido.getTotal());
         response.setEstado(pedido.getEstado());
         response.setFechaCreacion(pedido.getFechaCreacion());
+        response.setDireccionEnvio(pedido.getDireccionEnvio());
         if (pedido.getDetalles() != null) {
             response.setItems(pedido.getDetalles().stream().map(d -> {
                 DetallePedidoResponse dr = new DetallePedidoResponse();
@@ -126,6 +127,7 @@ public class DtoMapper {
         pedido.setUsuario(usuario);
         pedido.setTotal(request.getTotal());
         pedido.setEstado(request.getEstado());
+        pedido.setDireccionEnvio(request.getDireccionEnvio());
         if (request.getItems() != null) {
             List<DetallePedido> detalles = new ArrayList<>();
             for (var item : request.getItems()) {

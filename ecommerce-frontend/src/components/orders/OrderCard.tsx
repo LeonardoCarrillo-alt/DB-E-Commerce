@@ -1,9 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, Typography, Box, Chip, Grid, Divider } from '@mui/material'
+import LocalShippingIcon from '@mui/icons-material/LocalShipping'
 import { ORDER_STATUS_COLOR } from '../../utils/constants'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
 import { productApi } from '../../api/productApi'
+import { useEnvioByPedido } from '../../hooks/useEnvio'
 import type { Order } from '../../api/orderApi'
 
 interface Props {
@@ -15,6 +17,8 @@ export default function OrderCard({ order }: Props) {
     queryKey: ['products', 'all'],
     queryFn: () => productApi.getAll().then((res) => res.data),
   })
+
+  const { data: envio } = useEnvioByPedido(order.id)
 
   const productMap = new Map<string, string>()
   products?.forEach((p) => {
@@ -77,10 +81,36 @@ export default function OrderCard({ order }: Props) {
 
         <Divider sx={{ my: 1.5 }} />
 
+        {order.direccion_envio && (
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              Dirección de envío:
+            </Typography>
+            <Typography variant="body2">{order.direccion_envio}</Typography>
+          </Box>
+        )}
+
+        {envio && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <LocalShippingIcon fontSize="small" color="primary" />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                {envio.proveedor} — {envio.tracking_number}
+              </Typography>
+              <Chip
+                label={envio.estado}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ ml: 1, fontWeight: 600, height: 20, fontSize: 11 }}
+              />
+            </Box>
+          </Box>
+        )}
+
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Typography variant="h6" fontWeight={800} color="primary.main">
-            Total: {/* ✅ Validar total */}
-            {isNaN(parseFloat((order.total || 0).toString()))
+            Total: {isNaN(parseFloat((order.total || 0).toString()))
               ? 'Bs 0,00'
               : formatCurrency(parseFloat((order.total || 0).toString()))}
           </Typography>

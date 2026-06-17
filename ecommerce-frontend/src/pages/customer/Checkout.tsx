@@ -6,10 +6,12 @@ import {
 } from '@mui/material'
 import CheckoutForm from '../../components/forms/CheckoutForm'
 import CartSummary from '../../components/cart/CartSummary'
-import { useCart } from '../../store/hooks/useAuth'
+import { useCart, useAuth } from '../../store/hooks/useAuth'
 import { useAppDispatch } from '../../store/hooks/useAuth'
 import { clearCart } from '../../store/slices/cartSlice'
 import { useCreateOrder } from '../../hooks/useOrders'
+import { usePaymentMethods } from '../../hooks/usePaymentMethods'
+import { useDirecciones } from '../../hooks/useDirecciones'
 import { cartService } from '../../services/cartService'
 import { orderService } from '../../services/orderService'
 import type { CheckoutFormValues } from '../../schemas'
@@ -18,10 +20,15 @@ export default function Checkout() {
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const { items } = useCart()
+  const { user } = useAuth()
   const createOrder = useCreateOrder()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [activeStep, setActiveStep] = useState(1)
+
+  const userId = user?.uuid || user?.id
+  const { data: savedPaymentMethods } = usePaymentMethods(userId)
+  const { data: savedDirecciones } = useDirecciones(userId)
 
   if (items.length === 0 && !success) {
     return <Navigate to="/cart" replace />
@@ -38,7 +45,7 @@ export default function Checkout() {
       // Paso 2: Procesar checkout → reserva stock (POST /carrito/checkout/procesar)
       const response = await cartService.procesarCheckout()
 
-      // Paso 3: Crear orden con el reserva_id y carrito.id retornados
+      // Paso 3: Crear orden con reserva_id y carrito.id retornados
       await orderService.create(response.reserva_id, response.carrito.id, data)
 
       // Paso 3: Limpiar carrito local y redirigir
@@ -81,7 +88,7 @@ export default function Checkout() {
         <Grid item xs={12} md={8}>
           <Card>
             <CardContent>
-              <CheckoutForm onSubmit={handleSubmit} loading={createOrder.isPending} />
+              <CheckoutForm onSubmit={handleSubmit} loading={createOrder.isPending} savedPaymentMethods={savedPaymentMethods} savedDirecciones={savedDirecciones} />
             </CardContent>
           </Card>
         </Grid>
@@ -94,7 +101,7 @@ export default function Checkout() {
                   {items.length} producto(s) en tu carrito
                 </Typography>
                 {items.map((item) => (
-                  <Box key={item.productId} sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
+                  <Box key={item.productoId} sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
                     <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
                       {item.nombre} × {item.cantidad}
                     </Typography>

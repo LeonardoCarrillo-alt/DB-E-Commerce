@@ -13,6 +13,7 @@ public class CrearPedidoRequestDTO {
     public BigDecimal total;
     public String estado;
     public LocalDateTime fechaCreacion;  // ✅ AGREGADO - Importante para auditoria
+    public String direccionEnvio;
     public List<ItemPedidoDTO> items;
 
     /**

@@ -13,6 +13,7 @@ export interface Order {
   total: number
   estado: OrderStatus
   fecha_creacion: string
+  direccion_envio?: string
   items?: OrderItem[]
 }
 

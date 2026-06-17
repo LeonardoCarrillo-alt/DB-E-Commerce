@@ -20,6 +20,8 @@ public class PedidoRequest {
     @NotBlank
     private String estado;
 
+    private String direccionEnvio;
+
     private List<DetallePedidoRequest> items;
 
     public UUID getUsuarioId() { return usuarioId; }
@@ -30,6 +32,9 @@ public class PedidoRequest {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getDireccionEnvio() { return direccionEnvio; }
+    public void setDireccionEnvio(String direccionEnvio) { this.direccionEnvio = direccionEnvio; }
 
     public List<DetallePedidoRequest> getItems() { return items; }
     public void setItems(List<DetallePedidoRequest> items) { this.items = items; }
