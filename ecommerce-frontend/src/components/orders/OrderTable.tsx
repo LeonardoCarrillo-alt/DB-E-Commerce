@@ -34,35 +34,52 @@ export default function OrderTable({ orders, onStatusChange }: Props) {
               </TableCell>
             </TableRow>
           ) : (
-            orders.map((order) => (
-              <TableRow key={order.id} hover>
-                <TableCell sx={{ fontWeight: 600 }}>#{order.id}</TableCell>
-                <TableCell>{formatDateShort(order.fecha_creacion)}</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 11 }}>{order.usuarioId}</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{formatCurrency(order.total)}</TableCell>
-                <TableCell>
-                  {onStatusChange ? (
-                    <Select
-                      value={order.estado}
-                      size="small"
-                      onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
-                      sx={{ minWidth: 130 }}
-                    >
-                      {Object.values(ORDER_STATUS).map((s) => (
-                        <MenuItem key={s} value={s}>{s}</MenuItem>
-                      ))}
-                    </Select>
-                  ) : (
-                    <Chip
-                      label={order.estado}
-                      color={ORDER_STATUS_COLOR[order.estado] ?? 'default'}
-                      size="small"
-                      sx={{ fontWeight: 600 }}
-                    />
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
+            orders.map((order) => {
+              // ✅ Extraer fecha con fallback
+              const fechaOrden = order.createdAt || order.fecha_creacion || new Date()
+              
+              // ✅ Extraer y validar total
+              const totalMonto = parseFloat((order.total || 0).toString())
+              const totalFormato = isNaN(totalMonto) ? 'Bs 0,00' : formatCurrency(totalMonto)
+
+              return (
+                <TableRow key={order.id} hover>
+                  <TableCell sx={{ fontWeight: 600 }}>#{order.id}</TableCell>
+                  <TableCell>
+                    {/* ✅ Usar fallback de fecha */}
+                    {formatDateShort(fechaOrden)}
+                  </TableCell>
+                  <TableCell sx={{ fontFamily: 'monospace', fontSize: 11 }}>
+                    {order.usuarioId || 'N/A'}
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>
+                    {/* ✅ Validar total */}
+                    {totalFormato}
+                  </TableCell>
+                  <TableCell>
+                    {onStatusChange ? (
+                      <Select
+                        value={order.estado || 'PENDIENTE'}
+                        size="small"
+                        onChange={(e) => onStatusChange(order.id, e.target.value as OrderStatus)}
+                        sx={{ minWidth: 130 }}
+                      >
+                        {Object.values(ORDER_STATUS).map((s) => (
+                          <MenuItem key={s} value={s}>{s}</MenuItem>
+                        ))}
+                      </Select>
+                    ) : (
+                      <Chip
+                        label={order.estado || 'PENDIENTE'}
+                        color={ORDER_STATUS_COLOR[order.estado] ?? 'default'}
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+              )
+            })
           )}
         </TableBody>
       </Table>

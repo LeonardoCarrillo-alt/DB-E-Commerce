@@ -2,12 +2,21 @@ import axiosInstance from './axios'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+// export interface CartItemAPI {
+//   productoId: string
+//   cantidad: number
+//   variante?: string
+//   usuarioId?: string
+//   usuarioEmail?: string
+// }
+
+// En cartApi.ts
 export interface CartItemAPI {
-  productoId: string
-  cantidad: number
-  variante?: string
-  usuarioId?: string
-  usuarioEmail?: string
+  productoId: string;    // Tiene que ser exactamente 'productoId'
+  cantidad: number;      // Mínimo 1
+  variante?: string;     // Opcional
+  usuarioId?: string;    // Opcional (el backend lo prefiere por Header, pero dejémoslo limpio)
+  usuarioEmail?: string; // Opcional
 }
 
 export interface CartItemResponse {

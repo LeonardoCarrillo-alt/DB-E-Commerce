@@ -44,10 +44,14 @@ axiosInstance.interceptors.request.use(
       config.headers['X-Session-Id'] = sessionId
     }
 
+    // const isGuest = !token
+    // if (isGuest) {
+    //   config.headers['X-Invitado'] = isGuest?'true':'false'
+    // }
     const isGuest = !token
-    if (isGuest) {
-      config.headers['X-Invitado'] = 'true'
-    }
+
+    // Enviar explícitamente 'true' o 'false' en formato string para que Java lo parsee limpiamente
+    config.headers['X-Invitado'] = isGuest ? 'true' : 'false'
 
     return config
   },
