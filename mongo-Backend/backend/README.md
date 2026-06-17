@@ -13,7 +13,7 @@ En la arquitectura políglota, este servicio es consumido principalmente por **m
 | **Framework** | Quarkus 3.36.2 |
 | **Puerto por defecto** | `8082` |
 | **Base URL local** | `http://localhost:8082` |
-| **Formato** | `application/json` (camelCase) |
+| **Formato** | `application/json` (snake_case) |
 | **Base de datos** | PostgreSQL 16 — `ecommerce_db` |
 | **Puerto PostgreSQL** | `5433` (host) → `5432` (contenedor) |
 | **Migraciones** | Flyway (`src/main/resources/db/migration/`) |
@@ -57,6 +57,8 @@ mvn quarkus:dev
 |-------|------------|-----|
 | `admin@ecommerce.com` | `admin123` | `SUPER_ADMIN` |
 | `cliente@ecommerce.com` | `admin123` | `CLIENTE` |
+| `tienda@ecommerce.com` | `tienda123` | `ADMIN_TIENDA` |
+| `vendedor@ecommerce.com` | `vendedor123` | `VENDEDOR` |
 
 ---
 
@@ -198,8 +200,9 @@ Cuando faltan campos obligatorios o el formato es incorrecto:
 | `usuarioId` | `UUID` | Sí |
 | `total` | `number` (decimal) | Sí, ≥ 0 |
 | `estado` | `string` | Sí |
+| `direccionEnvio` | `string` | No — texto libre con la dirección de envío |
 
-**Response:** `id` (`UUID`), `usuarioId`, `total`, `estado`, `fechaCreacion` (ISO-8601)
+**Response:** `id` (`UUID`), `usuario_id`, `total`, `estado`, `fecha_creacion` (ISO-8601), `direccion_envio`
 
 ---
 
@@ -209,13 +212,14 @@ Cuando faltan campos obligatorios o el formato es incorrecto:
 
 | Campo | Tipo | Requerido |
 |-------|------|-----------|
-| `usuarioId` | `UUID` | Sí |
 | `calle` | `string` | Sí |
 | `ciudad` | `string` | Sí (máx. 100) |
-| `codigoPostal` | `string` | Sí (máx. 20) |
+| `codigo_postal` | `string` | Sí (máx. 20) |
 | `pais` | `string` | Sí (máx. 50) |
 
-**Response:** `id`, `usuarioId`, `calle`, `ciudad`, `codigoPostal`, `pais`
+> `usuario_id` se obtiene del JWT, no se envía en el body.
+
+**Response:** `id`, `usuario_id`, `calle`, `ciudad`, `codigo_postal`, `pais`
 
 ---
 
@@ -225,12 +229,13 @@ Cuando faltan campos obligatorios o el formato es incorrecto:
 
 | Campo | Tipo | Requerido |
 |-------|------|-----------|
-| `usuarioId` | `UUID` | Sí |
-| `tokenTarjeta` | `string` | Sí — token seguro de la pasarela |
+| `token_tarjeta` | `string` | Sí — token seguro de la pasarela |
 | `tipo` | `string` | Sí (máx. 50), ej. `VISA`, `MASTERCARD` |
-| `ultimosDigitos` | `string` | Sí (4 caracteres) |
+| `ultimos_digitos` | `string` | Sí (4 caracteres) |
 
-**Response:** `id`, `usuarioId`, `tokenTarjeta`, `tipo`, `ultimosDigitos`
+> `usuario_id` se obtiene del JWT, no se envía en el body.
+
+**Response:** `id`, `usuario_id`, `token_tarjeta`, `tipo`, `ultimos_digitos`
 
 ---
 
@@ -255,12 +260,12 @@ Cuando faltan campos obligatorios o el formato es incorrecto:
 
 | Campo | Tipo | Requerido |
 |-------|------|-----------|
-| `pedidoId` | `UUID` | Sí |
-| `trackingNumber` | `string` | Sí (máx. 100) |
+| `pedido_id` | `UUID` | Sí |
+| `tracking_number` | `string` | Sí (máx. 100) |
 | `estado` | `string` | Sí (máx. 50) |
 | `proveedor` | `string` | Sí (máx. 100) |
 
-**Response:** `id`, `pedidoId`, `trackingNumber`, `estado`, `proveedor`
+**Response:** `id`, `pedido_id`, `tracking_number`, `estado`, `proveedor`
 
 ---
 
@@ -378,7 +383,8 @@ curl -X POST http://localhost:8082/usuarios \
 {
   "usuarioId": "22222222-2222-2222-2222-222222222222",
   "total": 149.99,
-  "estado": "PENDIENTE"
+  "estado": "PENDIENTE",
+  "direccionEnvio": "Av. Principal 123, La Paz, Bolivia"
 }
 ```
 
@@ -386,23 +392,26 @@ curl -X POST http://localhost:8082/usuarios \
 
 ### Direcciones — `/direcciones`
 
+Endpoints protegidos con `@Authenticated` excepto `GET /direcciones`. El `usuarioId` se obtiene del JWT, no del body.
+
 | Método | Ruta | Body request | Respuesta | Códigos |
 |--------|------|--------------|-----------|---------|
 | `GET` | `/direcciones` | — | `DireccionResponse[]` | `200` |
-| `GET` | `/direcciones/{id}` | — | `DireccionResponse` | `200`, `404` |
-| `GET` | `/direcciones/usuario/{usuarioId}` | — | `DireccionResponse[]` | `200` |
-| `POST` | `/direcciones` | `DireccionRequest` | `DireccionResponse` | `201`, `400` |
-| `PUT` | `/direcciones/{id}` | `DireccionRequest` | `DireccionResponse` | `200`, `400`, `404` |
-| `DELETE` | `/direcciones/{id}` | — | — | `204`, `404` |
+| `GET` | `/direcciones/{id}` | — | `DireccionResponse` | `200`, `401`, `404` |
+| `GET` | `/direcciones/usuario/{usuarioId}` | — | `DireccionResponse[]` | `200`, `401`, `403` |
+| `POST` | `/direcciones` | `DireccionRequest` | `DireccionResponse` | `201`, `400`, `401` |
+| `PUT` | `/direcciones/{id}` | `DireccionRequest` | `DireccionResponse` | `200`, `400`, `401`, `403`, `404` |
+| `DELETE` | `/direcciones/{id}` | — | — | `204`, `401`, `403`, `404` |
+
+> `403` — cuando el usuario autenticado intenta acceder/modificar direcciones de otro usuario.
 
 **Ejemplo POST:**
 
 ```json
 {
-  "usuarioId": "22222222-2222-2222-2222-222222222222",
   "calle": "Av. Principal 123",
   "ciudad": "La Paz",
-  "codigoPostal": "0000",
+  "codigo_postal": "0000",
   "pais": "Bolivia"
 }
 ```
@@ -410,6 +419,8 @@ curl -X POST http://localhost:8082/usuarios \
 ---
 
 ### Métodos de pago — `/metodos-pago`
+
+> `usuarioId` se obtiene del JWT, no del body (misma política que direcciones).
 
 | Método | Ruta | Body request | Respuesta | Códigos |
 |--------|------|--------------|-----------|---------|
@@ -424,10 +435,9 @@ curl -X POST http://localhost:8082/usuarios \
 
 ```json
 {
-  "usuarioId": "22222222-2222-2222-2222-222222222222",
-  "tokenTarjeta": "tok_visa_4242",
+  "token_tarjeta": "tok_visa_4242",
   "tipo": "VISA",
-  "ultimosDigitos": "4242"
+  "ultimos_digitos": "4242"
 }
 ```
 
@@ -476,8 +486,8 @@ curl -X POST http://localhost:8082/usuarios \
 
 ```json
 {
-  "pedidoId": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-  "trackingNumber": "TRK-2026-00001",
+  "pedido_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "tracking_number": "TRK-2026-00001",
   "estado": "EN_TRANSITO",
   "proveedor": "DHL"
 }
@@ -505,12 +515,12 @@ pedidos ── detalle_pedido (producto_id referencia catálogo Mongo)
 | `roles` | `BIGSERIAL` | Permisos en JSONB |
 | `usuarios` | `UUID` | Email único, password BCrypt |
 | `usuario_roles` | compuesta | Usuario ↔ Rol |
-| `pedidos` | `UUID` | FK → usuarios |
+| `pedidos` | `UUID` | FK → usuarios, tiene `direccion_envio` (TEXT) |
 | `detalle_pedido` | `BIGSERIAL` | `producto_id` es string (Mongo) |
 | `direcciones` | `UUID` | FK → usuarios |
 | `metodos_pago` | `UUID` | FK → usuarios |
 | `facturas` | `UUID` | FK → pedidos (1:1) |
-| `envios` | `UUID` | FK → pedidos (1:1) |
+| `envios` | `UUID` | FK → pedidos (1:1), sin cascade |
 
 ---
 

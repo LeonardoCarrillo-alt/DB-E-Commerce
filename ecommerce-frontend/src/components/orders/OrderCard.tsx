@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, Typography, Box, Chip, Grid, Divider } from '@mui/material'
 import LocalShippingIcon from '@mui/icons-material/LocalShipping'
+import DescriptionIcon from '@mui/icons-material/Description'
 import { ORDER_STATUS_COLOR } from '../../utils/constants'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
 import { productApi } from '../../api/productApi'
 import { useEnvioByPedido } from '../../hooks/useEnvio'
+import { useFacturaByPedido } from '../../hooks/useFacturas'
 import type { Order } from '../../api/orderApi'
 
 interface Props {
@@ -19,6 +21,7 @@ export default function OrderCard({ order }: Props) {
   })
 
   const { data: envio } = useEnvioByPedido(order.id)
+  const { data: factura } = useFacturaByPedido(order.id)
 
   const productMap = new Map<string, string>()
   products?.forEach((p) => {
@@ -26,7 +29,7 @@ export default function OrderCard({ order }: Props) {
     if (id) productMap.set(id, p.nombre)
   })
 
-  const fechaOrden = order.createdAt || order.fecha_creacion || new Date().toISOString()
+  const fechaOrden = order.fecha_creacion || new Date().toISOString()
   const items = order.items || []
 
   return (
@@ -104,6 +107,29 @@ export default function OrderCard({ order }: Props) {
                 variant="outlined"
                 sx={{ ml: 1, fontWeight: 600, height: 20, fontSize: 11 }}
               />
+            </Box>
+          </Box>
+        )}
+
+        {factura && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <DescriptionIcon fontSize="small" color="action" />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                RFC: {factura.rfc}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                {factura.xml_url && (
+                  <a href={factura.xml_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                    XML
+                  </a>
+                )}
+                {factura.pdf_url && (
+                  <a href={factura.pdf_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                    PDF
+                  </a>
+                )}
+              </Box>
             </Box>
           </Box>
         )}

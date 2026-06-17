@@ -86,8 +86,9 @@ export default function EnvioDialog({ open, onClose, order }: Props) {
         })
       }
       onClose()
-    } catch {
-      setError('Error al guardar el envío')
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setError(axiosErr?.response?.data?.message || 'Error al guardar el envío')
     }
   }
 
