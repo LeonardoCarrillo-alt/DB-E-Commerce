@@ -56,7 +56,7 @@ export default function ProductForm({ initialData, onSubmit, loading = false }: 
           nombre: initialData.nombre,
           descripcion: initialData.descripcion,
           precio: initialData.precio,
-          stock: initialData.stock ?? (initialData as any).stockDisponible ?? 0,
+          stock: initialData.stock_disponible ?? 0,
           categoria: initialData.categoria,
           marca: initialData.marca || '', // 🛠️ Añadido para soportar el input de marca
           etiquetas: initialData.etiquetas?.join(', ') ?? '',

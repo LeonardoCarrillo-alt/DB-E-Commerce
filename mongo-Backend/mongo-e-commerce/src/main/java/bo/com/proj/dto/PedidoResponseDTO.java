@@ -49,9 +49,7 @@ public class PedidoResponseDTO {
         // Cantidad pedida
         public Integer cantidad;
         
-        // ✅ CRÍTICO: Nombre del campo debe ser "precio" (no precioUnitario)
-        // porque el frontend espera "item.precio"
-        @JsonProperty("precio")
+        // El postgres API devuelve "precio_unitario" (SNAKE_CASE)
         public BigDecimal precioUnitario;
         
         // Subtotal del item (cantidad × precio)

@@ -184,9 +184,9 @@ const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string
                       {formatCurrency(product.precio)}
                     </Typography>
                     <Chip
-                      label={`Stock: ${product.stock ?? 0}`}
+                      label={`Stock: ${product.stock_disponible ?? 0}`}
                       size="small"
-                      color={(product.stock ?? 0) > 0 ? 'success' : 'error'}
+                      color={(product.stock_disponible ?? 0) > 0 ? 'success' : 'error'}
                       variant="outlined"
                     />
                   </Stack>
