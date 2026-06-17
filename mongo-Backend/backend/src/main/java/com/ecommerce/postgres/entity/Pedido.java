@@ -39,6 +39,9 @@ public class Pedido extends PanacheEntityBase {
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private Instant fechaCreacion = Instant.now();
 
+    @Column(name = "direccion_envio", length = 500)
+    private String direccionEnvio;
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetallePedido> detalles = new ArrayList<>();
 
@@ -86,6 +89,14 @@ public class Pedido extends PanacheEntityBase {
 
     public void setDetalles(List<DetallePedido> detalles) {
         this.detalles = detalles;
+    }
+
+    public String getDireccionEnvio() {
+        return direccionEnvio;
+    }
+
+    public void setDireccionEnvio(String direccionEnvio) {
+        this.direccionEnvio = direccionEnvio;
     }
 
     public Factura getFactura() {

@@ -11,6 +11,7 @@ public class PedidoResponse {
     private BigDecimal total;
     private String estado;
     private Instant fechaCreacion;
+    private String direccionEnvio;
     private List<DetallePedidoResponse> items;
 
     public UUID getId() { return id; }
@@ -27,6 +28,9 @@ public class PedidoResponse {
 
     public Instant getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(Instant fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+
+    public String getDireccionEnvio() { return direccionEnvio; }
+    public void setDireccionEnvio(String direccionEnvio) { this.direccionEnvio = direccionEnvio; }
 
     public List<DetallePedidoResponse> getItems() { return items; }
     public void setItems(List<DetallePedidoResponse> items) { this.items = items; }

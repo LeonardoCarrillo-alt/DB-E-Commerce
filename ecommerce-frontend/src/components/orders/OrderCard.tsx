@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, Typography, Box, Chip, Grid, Divider } from '@mui/material'
+import LocalShippingIcon from '@mui/icons-material/LocalShipping'
+import DescriptionIcon from '@mui/icons-material/Description'
 import { ORDER_STATUS_COLOR } from '../../utils/constants'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
 import { productApi } from '../../api/productApi'
+import { useEnvioByPedido } from '../../hooks/useEnvio'
+import { useFacturaByPedido } from '../../hooks/useFacturas'
 import type { Order } from '../../api/orderApi'
 
 interface Props {
@@ -16,13 +20,16 @@ export default function OrderCard({ order }: Props) {
     queryFn: () => productApi.getAll().then((res) => res.data),
   })
 
+  const { data: envio } = useEnvioByPedido(order.id)
+  const { data: factura } = useFacturaByPedido(order.id)
+
   const productMap = new Map<string, string>()
   products?.forEach((p) => {
     const id = p._id || p.id
     if (id) productMap.set(id, p.nombre)
   })
 
-  const fechaOrden = order.createdAt || order.fecha_creacion || new Date().toISOString()
+  const fechaOrden = order.fecha_creacion || new Date().toISOString()
   const items = order.items || []
 
   return (
@@ -77,10 +84,59 @@ export default function OrderCard({ order }: Props) {
 
         <Divider sx={{ my: 1.5 }} />
 
+        {order.direccion_envio && (
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              Dirección de envío:
+            </Typography>
+            <Typography variant="body2">{order.direccion_envio}</Typography>
+          </Box>
+        )}
+
+        {envio && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <LocalShippingIcon fontSize="small" color="primary" />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                {envio.proveedor} — {envio.tracking_number}
+              </Typography>
+              <Chip
+                label={envio.estado}
+                size="small"
+                color="primary"
+                variant="outlined"
+                sx={{ ml: 1, fontWeight: 600, height: 20, fontSize: 11 }}
+              />
+            </Box>
+          </Box>
+        )}
+
+        {factura && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <DescriptionIcon fontSize="small" color="action" />
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                RFC: {factura.rfc}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                {factura.xml_url && (
+                  <a href={factura.xml_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                    XML
+                  </a>
+                )}
+                {factura.pdf_url && (
+                  <a href={factura.pdf_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12 }}>
+                    PDF
+                  </a>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        )}
+
         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Typography variant="h6" fontWeight={800} color="primary.main">
-            Total: {/* ✅ Validar total */}
-            {isNaN(parseFloat((order.total || 0).toString()))
+            Total: {isNaN(parseFloat((order.total || 0).toString()))
               ? 'Bs 0,00'
               : formatCurrency(parseFloat((order.total || 0).toString()))}
           </Typography>

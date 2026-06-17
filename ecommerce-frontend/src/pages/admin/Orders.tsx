@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Box, Typography, Tabs, Tab, Snackbar, Alert } from '@mui/material'
 import OrderTable from '../../components/orders/OrderTable'
+import EnvioDialog from '../../components/orders/EnvioDialog'
+import FacturaDialog from '../../components/orders/FacturaDialog'
 import { useAllOrders, useUpdateOrderStatus } from '../../hooks/useOrders'
 import { ORDER_STATUS } from '../../utils/constants'
 import Loading from '../../components/common/Loading'
 import type { OrderStatus } from '../../utils/constants'
+import type { Order } from '../../api/orderApi'
 
 const TABS: { label: string; value: OrderStatus | 'TODOS' }[] = [
   { label: 'Todos', value: 'TODOS' },
@@ -19,10 +22,23 @@ export default function AdminOrders() {
   const { data: orders, isLoading } = useAllOrders()
   const updateStatus = useUpdateOrderStatus()
   const [snackbar, setSnackbar] = useState(false)
+  const [envioDialogOpen, setEnvioDialogOpen] = useState(false)
+  const [facturaDialogOpen, setFacturaDialogOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   const handleStatusChange = async (id: string, estado: OrderStatus) => {
     await updateStatus.mutateAsync({ id, estado })
     setSnackbar(true)
+  }
+
+  const handleRowClick = (order: Order) => {
+    setSelectedOrder(order)
+    setEnvioDialogOpen(true)
+  }
+
+  const handleFacturaClick = (order: Order) => {
+    setSelectedOrder(order)
+    setFacturaDialogOpen(true)
   }
 
   const filtered = orders?.filter((o) => {
@@ -51,7 +67,19 @@ export default function AdminOrders() {
         {TABS.map((t) => <Tab key={t.value} label={t.label} />)}
       </Tabs>
 
-      <OrderTable orders={filtered} onStatusChange={handleStatusChange} />
+      <OrderTable orders={filtered} onStatusChange={handleStatusChange} onRowClick={handleRowClick} onFacturaClick={handleFacturaClick} />
+
+      <EnvioDialog
+        open={envioDialogOpen}
+        onClose={() => setEnvioDialogOpen(false)}
+        order={selectedOrder}
+      />
+
+      <FacturaDialog
+        open={facturaDialogOpen}
+        onClose={() => setFacturaDialogOpen(false)}
+        order={selectedOrder}
+      />
 
       <Snackbar open={snackbar} autoHideDuration={2500} onClose={() => setSnackbar(false)}>
         <Alert severity="success">Estado del pedido actualizado</Alert>

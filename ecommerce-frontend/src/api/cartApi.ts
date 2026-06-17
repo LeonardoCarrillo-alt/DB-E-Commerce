@@ -49,11 +49,13 @@ export interface CartResponse {
 }
 
 export interface CheckoutResponse {
-  reservaId: string
-  carritoId: string
+  reserva_id: string
+  carrito: {
+    id: string
+    items: CartItemResponse[]
+  }
   total: number
-  descuento?: number
-  items?: CartItemResponse[]
+  monto_descuento?: number
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

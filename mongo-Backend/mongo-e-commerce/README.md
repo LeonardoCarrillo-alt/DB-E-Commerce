@@ -120,15 +120,41 @@ SUPER_ADMIN → ADMIN_TIENDA → VENDEDOR → CLIENTE
 
 ## Integración con PostgreSQL
 
-A través de `PostgreSQLClient` (MicroProfile REST Client), este backend consume:
+A través de `PostgreSQLClient` y `PedidoClient` (MicroProfile REST Client), este backend consume:
 
-| Endpoint PostgreSQL | Uso |
-|--------------------|-----|
-| `GET /api/usuarios/validar` | Validar credenciales en login |
-| `GET /api/usuarios/{id}` | Obtener datos del usuario por ID |
-| `GET /api/usuarios/me` | Obtener usuario actual por token |
+| Endpoint PostgreSQL | Cliente REST | Uso |
+|--------------------|-------------|-----|
+| `GET /api/usuarios/validar` | `PostgreSQLClient` | Validar credenciales en login |
+| `GET /api/usuarios/{id}` | `PostgreSQLClient` | Obtener datos del usuario por ID |
+| `GET /api/usuarios/me` | `PostgreSQLClient` | Obtener usuario actual por token |
+| `POST /api/pedidos` | `PedidoClient` | Crear pedido desde el checkout |
+| `GET /api/pedidos` | `PedidoClient` | Listar todos los pedidos |
+| `GET /api/pedidos/{id}` | `PedidoClient` | Obtener pedido por ID |
+| `GET /api/pedidos/usuario/{usuarioId}` | `PedidoClient` | Obtener pedidos por usuario |
+| `POST /api/envios` | `EnvioClient` | Crear envío |
+| `GET /api/envios` | `EnvioClient` | Listar todos los envíos |
+| `GET /api/envios/{id}` | `EnvioClient` | Obtener envío por ID |
+| `GET /api/envios/pedido/{pedidoId}` | `EnvioClient` | Obtener envío por pedido |
+| `PUT /api/envios/{id}` | `EnvioClient` | Actualizar envío |
+| `DELETE /api/envios/{id}` | `EnvioClient` | Eliminar envío |
 
 El `tiendaId` que llega desde PostgreSQL se usa en MongoDB para asociar productos, inventario y promociones a tiendas específicas.
+
+### Configuración REST Clients
+
+```properties
+# PostgreSQL (usuarios/auth)
+postgresql-api/mp-rest/url=http://host.docker.internal:8082
+quarkus.rest-client.postgresql-api.url=http://host.docker.internal:8082
+
+# Pedidos
+pedidos-api/mp-rest/url=http://host.docker.internal:8082
+quarkus.rest-client.pedidos-api.url=http://host.docker.internal:8082
+
+# Envíos
+envios-api/mp-rest/url=http://host.docker.internal:8082
+quarkus.rest-client.envios-api.url=http://host.docker.internal:8082
+```
 
 ---
 
@@ -434,18 +460,77 @@ Authorization: Bearer <access_token>
 
 ---
 
+### Pedidos — `/pedidos`
+
+El frontend envía pedidos a este gateway, que los reenvía al backend PostgreSQL vía `PedidoClient`. Flujo completo: checkout → reserva stock → crear pedido en PostgreSQL → confirmar compra.
+
+| Método | Endpoint | Acceso | Descripción |
+|--------|----------|--------|-------------|
+| `POST` | `/pedidos` | CLIENTE, ADMIN_TIENDA, SUPER_ADMIN | Crea un pedido: reenvía a PostgreSQL, confirma la reserva de stock y retorna el pedido creado |
+| `GET` | `/pedidos` | ADMIN_TIENDA, SUPER_ADMIN | Lista todos los pedidos (proxy a PostgreSQL) |
+| `GET` | `/pedidos/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Obtiene un pedido por ID (proxy a PostgreSQL) |
+| `GET` | `/pedidos/usuario/me` | CLIENTE, ADMIN_TIENDA, SUPER_ADMIN | Lista pedidos del usuario autenticado (proxy a PostgreSQL) |
+| `PUT` | `/pedidos/{id}/estado` | ADMIN_TIENDA, SUPER_ADMIN | Actualiza el estado de un pedido |
+
+**POST** `/pedidos` — crea un pedido completo (checkout → reserva → pedido → confirmar):
+
+```json
+{
+  "reservaId": "RES-A1B2C3D4",
+  "carritoId": "<ObjectId del carrito>",
+  "direccionEnvio": "Av. Principal 123, La Paz, Bolivia",
+  "metodoPago": "EFECTIVO"
+}
+```
+
+**PUT** `/pedidos/{id}/estado`:
+
+```json
+{
+  "estado": "ENVIADO"
+}
+```
+
+---
+
+### Envíos — `/envios`
+
+Proxy hacia el backend PostgreSQL (`/envios`). Gestiona el seguimiento de envíos asociados a pedidos (relación 1:1).
+
+| Método | Endpoint | Acceso | Descripción |
+|--------|----------|--------|-------------|
+| `GET` | `/envios` | ADMIN_TIENDA, SUPER_ADMIN | Lista todos los envíos |
+| `GET` | `/envios/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Obtiene un envío por ID |
+| `GET` | `/envios/pedido/{pedidoId}` | ADMIN_TIENDA, SUPER_ADMIN | Obtiene el envío asociado a un pedido |
+| `POST` | `/envios` | ADMIN_TIENDA, SUPER_ADMIN | Crea un envío para un pedido |
+| `PUT` | `/envios/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Actualiza datos de un envío (tracking, estado, proveedor) |
+| `DELETE` | `/envios/{id}` | ADMIN_TIENDA, SUPER_ADMIN | Elimina un envío |
+
+**POST** `/envios`:
+
+```json
+{
+  "pedido_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+  "tracking_number": "TRK-2026-00001",
+  "estado": "EN_TRANSITO",
+  "proveedor": "DHL"
+}
+```
+
+---
+
 ## Estructura de Paquetes
 
 ```
 bo.com.proj
-├── client/       # REST client hacia PostgreSQL
-├── dto/          # Objetos de transferencia de datos
+├── client/       # REST clients hacia PostgreSQL (PostgreSQLClient, PedidoClient, EnvioClient)
+├── dto/          # Objetos de transferencia de datos (incluye EnvioRequestDTO, EnvioResponseDTO, CrearPedidoRequestDTO)
 ├── entity/       # Entidades MongoDB (Panache)
 ├── exception/    # NotFoundException, ValidationException
 ├── job/          # Jobs programados (Quarkus Scheduler)
 ├── model/        # Modelos internos (Usuario de PostgreSQL)
 ├── repository/   # Capa de acceso a datos
-├── resource/     # Endpoints REST (controllers)
+├── resource/     # Endpoints REST (controllers) — incluye OrderResource y EnvioResource
 ├── security/     # Generación de JWT
 └── service/      # Lógica de negocio
 ```

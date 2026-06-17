@@ -84,6 +84,7 @@ public class OrderResource {
         pedidoReq.total = carrito.total != null ? carrito.total : BigDecimal.ZERO;
         pedidoReq.estado = "PENDIENTE";
         pedidoReq.fechaCreacion = LocalDateTime.now();  // ✅ AGREGADO
+        pedidoReq.direccionEnvio = request.direccionEnvio;
         
         // ✅ MAPEO COMPLETO de items con nombre y subtotal
         pedidoReq.items = carrito.items.stream().map(item -> {

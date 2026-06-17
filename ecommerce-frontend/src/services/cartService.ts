@@ -143,7 +143,7 @@ export const cartService = {
    */
   async procesarCheckout(): Promise<CheckoutResponse> {
     const { data } = await cartApi.procesarCheckout()
-    console.log('✅ Checkout procesado. Reserva ID:', data.reservaId)
+    console.log('✅ Checkout procesado. Reserva ID:', data.reserva_id)
     return data
   },
 

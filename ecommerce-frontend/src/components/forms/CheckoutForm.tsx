@@ -1,23 +1,32 @@
+import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   TextField, Button, Box, Typography, Grid, FormControl,
-  InputLabel, Select, MenuItem, FormHelperText, Divider,
+  InputLabel, Select, MenuItem, FormHelperText, Divider, ListSubheader,
 } from '@mui/material'
 import { checkoutSchema, type CheckoutFormValues } from '../../schemas'
 import { PAYMENT_METHODS } from '../../utils/constants'
+import type { MetodoPago } from '../../api/paymentApi'
+import type { Direccion } from '../../api/direccionApi'
 
 interface Props {
   onSubmit: (data: CheckoutFormValues) => void
   loading?: boolean
+  savedPaymentMethods?: MetodoPago[]
+  savedDirecciones?: Direccion[]
 }
 
-export default function CheckoutForm({ onSubmit, loading = false }: Props) {
+export default function CheckoutForm({ onSubmit, loading = false, savedPaymentMethods, savedDirecciones }: Props) {
+  const [selectedSavedCardId, setSelectedSavedCardId] = useState<string | null>(null)
+  const [selectedDirId, setSelectedDirId] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -25,6 +34,17 @@ export default function CheckoutForm({ onSubmit, loading = false }: Props) {
   })
 
   const metodoPago = watch('metodoPago')
+  const isSavedCardSelected = selectedSavedCardId !== null
+
+  const handleSelectDireccion = (dirId: string) => {
+    setSelectedDirId(dirId)
+    const dir = savedDirecciones?.find((d) => d.id === dirId)
+    if (dir) {
+      setValue('calle', dir.calle)
+      setValue('ciudad', dir.ciudad)
+      setValue('codigoPostal', dir.codigo_postal || '')
+    }
+  }
 
   return (
     <Box component="form" onSubmit={handleSubmit(onSubmit)}>
@@ -46,6 +66,27 @@ export default function CheckoutForm({ onSubmit, loading = false }: Props) {
 
       <Divider sx={{ mb: 3 }} />
       <Typography variant="h6" fontWeight={700} gutterBottom>Dirección de envío</Typography>
+
+      {savedDirecciones && savedDirecciones.length > 0 && (
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Dirección guardada</InputLabel>
+          <Select
+            value={selectedDirId ?? ''}
+            label="Dirección guardada"
+            onChange={(e) => {
+              const val = e.target.value
+              if (val) handleSelectDireccion(val)
+            }}
+          >
+            {savedDirecciones.map((dir) => (
+              <MenuItem key={dir.id} value={dir.id}>
+                {dir.calle}, {dir.ciudad}, {dir.pais}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+
       <Grid container spacing={2} sx={{ mb: 3 }}>
         <Grid item xs={12}>
           <TextField fullWidth label="Calle y número" {...register('calle')} error={!!errors.calle} helperText={errors.calle?.message} />
@@ -68,10 +109,40 @@ export default function CheckoutForm({ onSubmit, loading = false }: Props) {
             render={({ field }) => (
               <FormControl fullWidth error={!!errors.metodoPago}>
                 <InputLabel>Método de pago</InputLabel>
-                <Select {...field} label="Método de pago">
+                <Select
+                  {...field}
+                  label="Método de pago"
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val.startsWith('SAVED:')) {
+                      setSelectedSavedCardId(val.replace('SAVED:', ''))
+                      field.onChange('TARJETA')
+                    } else {
+                      setSelectedSavedCardId(null)
+                      field.onChange(val)
+                    }
+                  }}
+                  renderValue={(value) => {
+                    if (value === 'TARJETA' && selectedSavedCardId) {
+                      const card = savedPaymentMethods?.find((pm) => pm.id === selectedSavedCardId)
+                      if (card) return `${card.tipo} **** ${card.ultimos_digitos}`
+                    }
+                    const method = PAYMENT_METHODS.find((m) => m.value === value)
+                    return method?.label ?? value
+                  }}
+                >
                   {PAYMENT_METHODS.map((m) => (
                     <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
                   ))}
+                  {savedPaymentMethods && savedPaymentMethods.length > 0 && [
+                    <Divider key="divider" sx={{ my: 1 }} />,
+                    <ListSubheader key="subheader" sx={{ lineHeight: '32px', fontWeight: 700 }}>Tus tarjetas guardadas</ListSubheader>,
+                    ...savedPaymentMethods.map((pm) => (
+                      <MenuItem key={pm.id} value={`SAVED:${pm.id}`}>
+                        {pm.tipo} **** {pm.ultimos_digitos}
+                      </MenuItem>
+                    )),
+                  ]}
                 </Select>
                 {errors.metodoPago && <FormHelperText>{errors.metodoPago.message}</FormHelperText>}
               </FormControl>
@@ -79,7 +150,7 @@ export default function CheckoutForm({ onSubmit, loading = false }: Props) {
           />
         </Grid>
 
-        {metodoPago === 'TARJETA' && (
+        {metodoPago === 'TARJETA' && !isSavedCardSelected && (
           <>
             <Grid item xs={12}>
               <TextField fullWidth label="Número de tarjeta" {...register('numeroTarjeta')} placeholder="**** **** **** ****" />
@@ -96,6 +167,14 @@ export default function CheckoutForm({ onSubmit, loading = false }: Props) {
           </>
         )}
       </Grid>
+
+      {isSavedCardSelected && savedPaymentMethods && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Usando tarjeta guardada:{' '}
+          {savedPaymentMethods.find((pm) => pm.id === selectedSavedCardId)?.tipo} ****{' '}
+          {savedPaymentMethods.find((pm) => pm.id === selectedSavedCardId)?.ultimos_digitos}
+        </Typography>
+      )}
 
       <Button type="submit" variant="contained" fullWidth size="large" disabled={loading} sx={{ mt: 4, py: 1.5 }}>
         {loading ? 'Procesando...' : 'Confirmar pedido'}

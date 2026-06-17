@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public class DireccionRequest {
 
-    @NotNull
     private UUID usuarioId;
 
     @NotBlank
