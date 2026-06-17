@@ -3,6 +3,8 @@ import { toQueryString } from '../utils/helpers'
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
+export const DEFAULT_PRODUCT_IMAGE = 'https://placehold.co/600x500?text=Sin+Imagen'
+
 export interface ProductAtributos {
   talla?: string
   color?: string
@@ -28,10 +30,72 @@ export interface Product {
   atributos?: ProductAtributos
   activo?: boolean
   imagenes?: string[]
+  imageBase64?: string
+  image_base64?: string
+  imageUrl?: string
+  imageId?: string
   etiquetas?: string[]
   variantes?: string[]
+  stock?: number
   stock_disponible?: number  // ← Backend devuelve snake_case
   disponible?: boolean       // ← Estado del producto
+}
+
+export interface ProductMutationPayload {
+  id?: string
+  nombre: string
+  descripcion: string
+  precio: number
+  categoria: string
+  tiendaId: string
+  activo?: boolean
+  disponible?: boolean
+  stock_disponible?: number
+  atributos?: Record<string, unknown>
+  etiquetas?: string[]
+  imageFile?: File | null
+}
+
+const normalizeProduct = (product: Product): Product => ({
+  ...product,
+  imageBase64: product.imageBase64 || product.image_base64,
+})
+
+const normalizeProducts = (products: Product[]) => products.map(normalizeProduct)
+
+const appendFormValue = (formData: FormData, key: string, value: unknown) => {
+  if (value === undefined || value === null) {
+    return
+  }
+
+  if (value instanceof Blob) {
+    formData.append(key, value)
+    return
+  }
+
+  if (Array.isArray(value) || typeof value === 'object') {
+    formData.append(key, JSON.stringify(value))
+    return
+  }
+
+  formData.append(key, String(value))
+}
+
+export const buildProductFormData = (data: ProductMutationPayload) => {
+  const formData = new FormData()
+  const { imageFile, ...fields } = data
+
+  Object.entries(fields).forEach(([key, value]) => appendFormValue(formData, key, value))
+
+  if (imageFile) {
+    formData.append('imagen', imageFile)
+  }
+
+  return formData
+}
+
+export const getProductImageSrc = (product?: Pick<Product, 'imageBase64' | 'imageUrl' | 'imagenes'> | null, fallback = DEFAULT_PRODUCT_IMAGE) => {
+  return product?.imageBase64 || product?.imageUrl || product?.imagenes?.[0] || fallback
 }
 
 export interface ProductsResponse {
@@ -48,6 +112,8 @@ export interface ProductsResponse {
 export interface ProductFilters {
   categoria?: string
   tiendaId?: string
+  pagina?: number
+  limite?: number
   page?: number
   limit?: number
 }
@@ -60,6 +126,8 @@ export interface ProductSearchBody {
   tiendaId?: string
   atributos?: Record<string, unknown>
   busqueda?: string
+  pagina?: number
+  limite?: number
 }
 
 // Body para POST /busqueda/productos (búsqueda avanzada)
@@ -89,23 +157,38 @@ export interface SugerenciaDTO {
 export const productApi = {
   /** GET /productos — lista todos los productos activos */
   getAll: (filters: ProductFilters = {}) =>
-    axiosInstance.get<Product[]>(`/productos${toQueryString(filters as Record<string, unknown>)}`),
+    axiosInstance.get<Product[]>(`/productos${toQueryString(filters as Record<string, unknown>)}`).then((res) => ({
+      ...res,
+      data: normalizeProducts(res.data),
+    })),
 
   /** GET /productos/{id} */
   getById: (id: string) =>
-    axiosInstance.get<Product>(`/productos/${id}`),
+    axiosInstance.get<Product>(`/productos/${id}`).then((res) => ({
+      ...res,
+      data: normalizeProduct(res.data),
+    })),
 
   /** POST /productos/buscar — búsqueda simple con filtros dinámicos */
   buscar: (body: ProductSearchBody) =>
-    axiosInstance.post<Product[]>('/productos/buscar', body),
+    axiosInstance.post<Product[]>('/productos/buscar', body).then((res) => ({
+      ...res,
+      data: normalizeProducts(res.data),
+    })),
 
   /** POST /productos — crear producto (ADMIN_TIENDA, SUPER_ADMIN) */
-  create: (data: Omit<Product, '_id' | 'id'>) =>
-    axiosInstance.post<Product>('/productos', data),
+  create: (data: ProductMutationPayload) =>
+    axiosInstance.post<Product>('/productos', buildProductFormData(data)).then((res) => ({
+      ...res,
+      data: normalizeProduct(res.data),
+    })),
 
   /** PUT /productos/{id} — actualizar producto */
-  update: (id: string, data: Partial<Product>) =>
-    axiosInstance.put<Product>(`/productos/${id}`, data),
+  update: (id: string, data: ProductMutationPayload) =>
+    axiosInstance.put<Product>(`/productos/${id}`, buildProductFormData(data)).then((res) => ({
+      ...res,
+      data: normalizeProduct(res.data),
+    })),
 
   /** DELETE /productos/{id} */
   delete: (id: string) =>

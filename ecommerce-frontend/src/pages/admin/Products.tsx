@@ -13,7 +13,7 @@ import ProductForm from '../../components/forms/ProductForm'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { ProductGridSkeleton } from '../../components/common/Loading'
 import { useAuth } from '../../store/hooks/useAuth'
-import type { Product } from '../../api/productApi'
+import { getProductImageSrc, type Product } from '../../api/productApi'
 import type { ProductFormValues } from '../../schemas'
 
 const PAGE_SIZE = 12
@@ -47,7 +47,7 @@ export default function AdminProducts() {
   }
 
 
-const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string, unknown>) => {
+const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string, unknown>, imageFile: File | null) => {
   try {
     const listaEtiquetas = typeof values.etiquetas === 'string'
       ? (values.etiquetas as string).split(',').map(t => t.trim()).filter(Boolean)
@@ -82,7 +82,8 @@ const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string
       stock_disponible: cantidadStock,  // Coincide con 'public Integer stockDisponible;'
 
       atributos: extraAttrs || {}, 
-      etiquetas: listaEtiquetas
+      etiquetas: listaEtiquetas,
+      imageFile,
     };
 
     if (editingProduct) {
@@ -167,7 +168,7 @@ const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string
                 <CardContent>
                   <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
                     <Avatar
-                      src={product.imagenes?.[0]}
+                      src={getProductImageSrc(product)}
                       variant="rounded"
                       sx={{ width: 56, height: 56, bgcolor: 'grey.100' }}
                     />
@@ -201,7 +202,16 @@ const handleSubmit = async (values: ProductFormValues, extraAttrs: Record<string
                     >
                       Editar
                     </Button>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(product._id || product.id)}>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => {
+                        const productId = product._id || product.id
+                        if (productId) {
+                          handleDelete(productId)
+                        }
+                      }}
+                    >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Stack>
