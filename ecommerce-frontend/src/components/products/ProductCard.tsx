@@ -191,7 +191,7 @@ export default function ProductCard({ product }: Props) {
           fontWeight={600}
           sx={{ mt: 0.5, display: 'block' }}
         >
-          {agotado ? 'Sin stock' : `${product.stock} disponible(s)`}
+          {agotado ? 'Sin stock' : `${product.stock_disponible ?? 0} disponible(s)`}
         </Typography>
       </CardContent>
 

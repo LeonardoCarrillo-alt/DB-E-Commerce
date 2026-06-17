@@ -1,7 +1,9 @@
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, Typography, Box, Chip, Grid, Divider } from '@mui/material'
 import { ORDER_STATUS_COLOR } from '../../utils/constants'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
+import { productApi } from '../../api/productApi'
 import type { Order } from '../../api/orderApi'
 
 interface Props {
@@ -9,10 +11,18 @@ interface Props {
 }
 
 export default function OrderCard({ order }: Props) {
-  // ✅ Extraer fecha con fallbacks
+  const { data: products } = useQuery({
+    queryKey: ['products', 'all'],
+    queryFn: () => productApi.getAll().then((res) => res.data),
+  })
+
+  const productMap = new Map<string, string>()
+  products?.forEach((p) => {
+    const id = p._id || p.id
+    if (id) productMap.set(id, p.nombre)
+  })
+
   const fechaOrden = order.createdAt || order.fecha_creacion || new Date().toISOString()
-  
-  // ✅ Validar que items existe
   const items = order.items || []
 
   return (
@@ -24,7 +34,6 @@ export default function OrderCard({ order }: Props) {
               Pedido #{order.id}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {/* ✅ Usar fecha con fallback */}
               {formatDate(fechaOrden) !== 'Fecha no disponible' ? formatDate(fechaOrden) : 'Fecha no disponible'}
             </Typography>
           </Box>
@@ -38,14 +47,12 @@ export default function OrderCard({ order }: Props) {
 
         <Divider sx={{ my: 1.5 }} />
 
-        {/* Items - ✅ Con validaciones */}
         {items.length > 0 ? (
           items.map((item, i) => {
-            // ✅ Extraer precio con múltiples fallbacks
-            const precio = item.precio || item.precioUnitario || 0
-            const nombre = item.nombre || 'Producto sin nombre'
+            const precio = item.precio_unitario ?? 0
+            const nombre = productMap.get(item.producto_id) || `Producto #${item.producto_id.slice(0, 8)}`
             const cantidad = item.cantidad || 0
-            const monto = parseFloat(precio.toString()) * cantidad
+            const monto = precio * cantidad
 
             return (
               <Grid container key={i} sx={{ mb: 0.5 }}>
@@ -56,7 +63,6 @@ export default function OrderCard({ order }: Props) {
                 </Grid>
                 <Grid item xs={4} sx={{ textAlign: 'right' }}>
                   <Typography variant="body2" fontWeight={600}>
-                    {/* ✅ Verificar que monto es un número válido */}
                     {isNaN(monto) ? 'Bs 0,00' : formatCurrency(monto)}
                   </Typography>
                 </Grid>
