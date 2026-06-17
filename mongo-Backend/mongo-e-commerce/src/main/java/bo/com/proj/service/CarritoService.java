@@ -126,7 +126,9 @@ public class CarritoService {
             throw new ValidationException("El producto no está disponible");
         }
         
-        int stockDisponible = inventarioService.getStockByProducto(producto.id.toString());
+        // 🚨 CAMBIO AQUÍ: Leer el stock directo de la entidad Producto en lugar de inventarioService
+        int stockDisponible = (producto.stockDisponible != null) ? producto.stockDisponible : 0;
+        
         int cantidadActual = carrito.items.stream()
                 .filter(i -> i.productoId.equals(dto.productoId) && 
                              Carrito.isSameVariantStatic(i.variante, dto.variante))
@@ -149,6 +151,11 @@ public class CarritoService {
         nuevoItem.variante = dto.variante;
         
         carrito.agregarItem(nuevoItem);
+        
+        // 💡 OPCIONAL: Si deseas que el stock disminuya en la coleccion de productos al añadirlo:
+        // producto.stockDisponible = stockDisponible - dto.cantidad;
+        // productoRepository.update(producto);
+
         carritoRepository.update(carrito);
         
         return toDTO(carrito);
@@ -317,6 +324,50 @@ public class CarritoService {
         return toDTO(carritoDestino);
     }
     // Procesar checkout completo (unificar reserva + preparar pago)
+    // public CheckoutResponseDTO procesarCheckout(String usuarioId, Boolean esInvitado) {
+    //     // Obtener carrito
+    //     Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
+        
+    //     if (carrito.items.isEmpty()) {
+    //         throw new ValidationException("El carrito está vacío");
+    //     }
+        
+    //     // Validar stock
+    //     Map<String, Boolean> validacion = inventarioService.validarStockItems(carrito);
+    //     boolean todoDisponible = validacion.values().stream().allMatch(v -> v);
+        
+    //     if (!todoDisponible) {
+    //         List<String> productosSinStock = validacion.entrySet().stream()
+    //             .filter(e -> !e.getValue())
+    //             .map(Map.Entry::getKey)
+    //             .collect(Collectors.toList());
+    //         throw new ValidationException("Productos sin stock: " + productosSinStock);
+    //     }
+        
+    //     // Crear reserva de stock
+    //     ReservaStockDTO reservaDTO = new ReservaStockDTO();
+    //     reservaDTO.carritoId = carrito.id.toString();
+    //     reservaDTO.usuarioId = usuarioId;
+    //     reservaDTO.items = carrito.items.stream().map(item -> {
+    //         ReservaStockDTO.ItemReservaDTO itemDTO = new ReservaStockDTO.ItemReservaDTO();
+    //         itemDTO.productoId = item.productoId;
+    //         itemDTO.variante = item.variante;
+    //         itemDTO.cantidad = item.cantidad;
+    //         return itemDTO;
+    //     }).collect(Collectors.toList());
+        
+    //     String reservaId = inventarioService.reservarStockCarrito(reservaDTO);
+        
+    //     // Preparar respuesta para checkout
+    //     CheckoutResponseDTO response = new CheckoutResponseDTO();
+    //     response.reservaId = reservaId;
+    //     response.carrito = toDTO(carrito);
+    //     response.total = carrito.total;
+    //     response.montoDescuento = carrito.descuento;
+        
+    //     return response;
+    // }
+    // Procesar checkout completo (unificar reserva + preparar pago)
     public CheckoutResponseDTO procesarCheckout(String usuarioId, Boolean esInvitado) {
         // Obtener carrito
         Carrito carrito = getCarritoEntity(usuarioId, null, esInvitado);
@@ -325,16 +376,13 @@ public class CarritoService {
             throw new ValidationException("El carrito está vacío");
         }
         
-        // Validar stock
-        Map<String, Boolean> validacion = inventarioService.validarStockItems(carrito);
-        boolean todoDisponible = validacion.values().stream().allMatch(v -> v);
-        
-        if (!todoDisponible) {
-            List<String> productosSinStock = validacion.entrySet().stream()
-                .filter(e -> !e.getValue())
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
-            throw new ValidationException("Productos sin stock: " + productosSinStock);
+        // 🚨 PARCHE DE PRUEBAS 1: Validar stock directamente usando la entidad Producto
+        for (Carrito.ItemCarrito item : carrito.items) {
+            Producto prod = productoRepository.findById(new ObjectId(item.productoId));
+            int stockReal = (prod != null && prod.stockDisponible != null) ? prod.stockDisponible : 0;
+            if (item.cantidad > stockReal) {
+                throw new ValidationException("Productos sin stock: [" + item.nombreProducto + "]");
+            }
         }
         
         // Crear reserva de stock
@@ -349,7 +397,20 @@ public class CarritoService {
             return itemDTO;
         }).collect(Collectors.toList());
         
-        String reservaId = inventarioService.reservarStockCarrito(reservaDTO);
+        // 🚨 PARCHE DE PRUEBAS 2: Descontar stock directo en Productos y saltar inventarioService
+        for (Carrito.ItemCarrito item : carrito.items) {
+            Producto prod = productoRepository.findById(new ObjectId(item.productoId));
+            if (prod != null && prod.stockDisponible != null) {
+                prod.stockDisponible = prod.stockDisponible - item.cantidad;
+                if (prod.stockDisponible <= 0) {
+                    prod.disponible = false;
+                }
+                productoRepository.update(prod); // Guarda la reducción directamente en MongoDB productos
+            }
+        }
+
+        // Generamos un ID simulado de reserva para que el checkout no se rompa
+        String reservaId = "RES-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         
         // Preparar respuesta para checkout
         CheckoutResponseDTO response = new CheckoutResponseDTO();
