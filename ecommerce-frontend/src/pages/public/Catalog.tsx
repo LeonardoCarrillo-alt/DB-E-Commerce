@@ -62,13 +62,17 @@ export default function Catalog() {
   // DETECTAR FORMATO DE RESPUESTA (Validación de contingencia)
   // 1. Extraemos la lista real de productos
   const listaProductos = Array.isArray(data) 
-    ? data 
-    : (data?.products ?? []); // Si tu backend usa snake_case mapeado a 'products' o un DTO personalizado
+    ? data
+    : ('products' in (data ?? {})
+        ? (data?.products ?? [])
+        : ('items' in (data ?? {}) ? (data?.items ?? []) : []))
 
   // 2. Extraemos el total de ítems existentes
-  const totalItems = Array.isArray(data) 
-    ? data.length 
-    : (data?.total ?? listaProductos.length);
+  const totalItems = Array.isArray(data)
+    ? data.length
+    : ('total' in (data ?? {})
+        ? (data?.total ?? listaProductos.length)
+        : listaProductos.length)
 
   const totalPages = Math.max(1, Math.ceil(totalItems / DEFAULT_PAGE_SIZE)) || 1;
 

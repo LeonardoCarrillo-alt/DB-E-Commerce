@@ -4,17 +4,24 @@ import bo.com.proj.dto.FiltroBusquedaDTO;
 import bo.com.proj.dto.ProductoDTO;
 import bo.com.proj.service.AuthService;
 import bo.com.proj.service.ProductoService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.FileUpload;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @Path("/productos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -22,11 +29,16 @@ import java.util.List;
 @Tag(name = "Productos", description = "Gestión del catálogo de productos")
 public class ProductoResource {
 
+    private static final long MAX_IMAGE_SIZE = 5L * 1024 * 1024;
+
     @Inject
     ProductoService productoService;
 
     @Inject
     AuthService authService;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @GET
     @PermitAll
@@ -47,35 +59,48 @@ public class ProductoResource {
     @POST
     @RolesAllowed({"ADMIN_TIENDA", "SUPER_ADMIN"})
     @Operation(summary = "Crear un nuevo producto (solo admin)")
-    public Response create(@Valid ProductoDTO dto) {
-        System.out.println("================= DATA ENTRANTE (DTO) =================");
-        System.out.println("Nombre: " + dto.nombre);
-        System.out.println("Tienda ID: " + dto.tiendaId);
-        System.out.println("Stock Disponible: " + dto.stockDisponible);
-        System.out.println("Disponible (Boolean): " + dto.disponible);
-        System.out.println("Atributos (Map): " + dto.atributos);
-        System.out.println("=======================================================");
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response create(
+            @RestForm("nombre") String nombre,
+            @RestForm("descripcion") String descripcion,
+            @RestForm("precio") java.math.BigDecimal precio,
+            @RestForm("categoria") String categoria,
+            @RestForm("tiendaId") String tiendaId,
+            @RestForm("atributos") String atributosJson,
+            @RestForm("activo") Boolean activo,
+            @RestForm("stock_disponible") Integer stockDisponible,
+            @RestForm("disponible") Boolean disponible,
+            @RestForm("imagen") FileUpload imagen) {
+        ProductoDTO dto = buildDto(nombre, descripcion, precio, categoria, tiendaId, atributosJson, activo, stockDisponible, disponible);
         if (!authService.canAccessTienda(dto.tiendaId)) {
             return Response.status(Response.Status.FORBIDDEN)
                 .entity("No tienes acceso a esta tienda")
                 .build();
         }
+        dto.imageBase64 = toImageDataUri(imagen);
         ProductoDTO created = productoService.create(dto);
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
+
     @PUT
     @Path("/{id}")
     @RolesAllowed({"ADMIN_TIENDA", "SUPER_ADMIN", "VENDEDOR"})
     @Operation(summary = "Actualizar producto")
-    public Response update(@PathParam("id") String id, ProductoDTO dto) {
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response update(
+            @PathParam("id") String id,
+            @RestForm("nombre") String nombre,
+            @RestForm("descripcion") String descripcion,
+            @RestForm("precio") java.math.BigDecimal precio,
+            @RestForm("categoria") String categoria,
+            @RestForm("tiendaId") String tiendaId,
+            @RestForm("atributos") String atributosJson,
+            @RestForm("activo") Boolean activo,
+            @RestForm("stock_disponible") Integer stockDisponible,
+            @RestForm("disponible") Boolean disponible,
+            @RestForm("imagen") FileUpload imagen) {
+        ProductoDTO dto = buildDto(nombre, descripcion, precio, categoria, tiendaId, atributosJson, activo, stockDisponible, disponible);
         ProductoDTO existing = productoService.findById(id);
-        System.out.println("================= DATA ENTRANTE (DTO) =================");
-        System.out.println("Nombre: " + dto.nombre);
-        System.out.println("Tienda ID: " + dto.tiendaId);
-        System.out.println("Stock Disponible: " + dto.stockDisponible);
-        System.out.println("Disponible (Boolean): " + dto.disponible);
-        System.out.println("Atributos (Map): " + dto.atributos);
-        System.out.println("=======================================================");
         if (existing == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -86,9 +111,9 @@ public class ProductoResource {
                 .entity("No tienes acceso a este producto")
                 .build();
         }
-        System.out.println("=======================================================");
-        System.out.println("SE LLEGA?");
-        
+        if (imagen != null) {
+            dto.imageBase64 = toImageDataUri(imagen);
+        }
         ProductoDTO updated = productoService.update(id, dto);
         return Response.ok(updated).build();
     }
@@ -115,5 +140,61 @@ public class ProductoResource {
     @Operation(summary = "Búsqueda avanzada con filtros dinámicos")
     public List<ProductoDTO> search(FiltroBusquedaDTO filtro) {
         return productoService.searchDynamic(filtro);
+    }
+
+    private ProductoDTO buildDto(
+            String nombre,
+            String descripcion,
+            java.math.BigDecimal precio,
+            String categoria,
+            String tiendaId,
+            String atributosJson,
+            Boolean activo,
+            Integer stockDisponible,
+            Boolean disponible) {
+        ProductoDTO dto = new ProductoDTO();
+        dto.nombre = nombre;
+        dto.descripcion = descripcion;
+        dto.precio = precio;
+        dto.categoria = categoria;
+        dto.tiendaId = tiendaId;
+        dto.activo = activo;
+        dto.stockDisponible = stockDisponible;
+        dto.disponible = disponible;
+        dto.atributos = parseAtributos(atributosJson);
+        return dto;
+    }
+
+    private Map<String, Object> parseAtributos(String atributosJson) {
+        if (atributosJson == null || atributosJson.isBlank()) {
+            return null;
+        }
+
+        try {
+            return objectMapper.readValue(atributosJson, new TypeReference<Map<String, Object>>() {});
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Los atributos del producto no son válidos");
+        }
+    }
+
+    private String toImageDataUri(FileUpload fileUpload) {
+        if (fileUpload == null) {
+            return null;
+        }
+
+        String contentType = fileUpload.contentType();
+        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            throw new IllegalArgumentException("La imagen debe ser JPG o PNG");
+        }
+        if (fileUpload.size() > MAX_IMAGE_SIZE) {
+            throw new IllegalArgumentException("La imagen no puede superar 5MB");
+        }
+
+        try {
+            byte[] bytes = Files.readAllBytes(fileUpload.filePath());
+            return "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("No se pudo procesar la imagen seleccionada");
+        }
     }
 }
